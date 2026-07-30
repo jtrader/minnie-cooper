@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StopLossRouteImport } from './routes/stop-loss'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StopLossRoute = StopLossRouteImport.update({
+  id: '/stop-loss',
+  path: '/stop-loss',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/stop-loss': typeof StopLossRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/stop-loss': typeof StopLossRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/stop-loss': typeof StopLossRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/stop-loss'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/stop-loss'
+  id: '__root__' | '/' | '/stop-loss'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  StopLossRoute: typeof StopLossRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +58,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stop-loss': {
+      id: '/stop-loss'
+      path: '/stop-loss'
+      fullPath: '/stop-loss'
+      preLoaderRoute: typeof StopLossRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  StopLossRoute: StopLossRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
