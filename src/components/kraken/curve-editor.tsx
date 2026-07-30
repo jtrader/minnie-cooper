@@ -16,6 +16,9 @@ export type CurveEditorProps = {
   endTime: number;
   /** Latest market price, used to auto-range the y-axis. */
   marketPrice: number | null;
+  /** Read-only curve of an already-active plan, drawn as a dashed overlay. */
+  overlayPoints?: CurvePoint[];
+  overlayLabel?: string;
   className?: string;
 };
 
@@ -44,12 +47,17 @@ export function CurveEditor({
   startTime,
   endTime,
   marketPrice,
+  overlayPoints,
+  overlayLabel,
   className,
 }: CurveEditorProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  const range = useMemo(() => niceRange(points, marketPrice), [points, marketPrice]);
+  const range = useMemo(
+    () => niceRange([...points, ...(overlayPoints ?? [])], marketPrice),
+    [points, overlayPoints, marketPrice],
+  );
 
   const plotW = WIDTH - PAD.left - PAD.right;
   const plotH = HEIGHT - PAD.top - PAD.bottom;
@@ -82,6 +90,13 @@ export function CurveEditor({
   );
 
   const sorted = useMemo(() => [...points].sort((a, b) => a.t - b.t), [points]);
+  const sortedOverlay = useMemo(
+    () => [...(overlayPoints ?? [])].sort((a, b) => a.t - b.t),
+    [overlayPoints],
+  );
+  const overlayPath = sortedOverlay
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${xFor(p.t).toFixed(2)} ${yFor(p.price).toFixed(2)}`)
+    .join(" ");
 
   const linePath = sorted
     .map((p, i) => `${i === 0 ? "M" : "L"} ${xFor(p.t).toFixed(2)} ${yFor(p.price).toFixed(2)}`)
@@ -194,6 +209,25 @@ export function CurveEditor({
             strokeLinejoin="round"
             pointerEvents="none"
           />
+        ) : null}
+
+        {sortedOverlay.length > 0 ? (
+          <g pointerEvents="none">
+            <path
+              d={overlayPath}
+              className="fill-none stroke-gain"
+              strokeWidth={2}
+              strokeDasharray="8 5"
+              strokeLinejoin="round"
+            />
+            <text
+              x={xFor(sortedOverlay[0].t) + 6}
+              y={yFor(sortedOverlay[0].price) - 6}
+              className="fill-gain font-mono text-[10px]"
+            >
+              {overlayLabel ?? "Active plan"}
+            </text>
+          </g>
         ) : null}
 
         {sorted.map((point, index) => (
