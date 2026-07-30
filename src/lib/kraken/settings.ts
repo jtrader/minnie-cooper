@@ -56,22 +56,37 @@ export function useBridgeSettings() {
 
 export function useToolMap() {
   const [toolMap, setToolMapState] = useState<ToolMap>({});
+  const [toolMapHydrated, setToolMapHydrated] = useState(false);
 
   useEffect(() => {
     setToolMapState(read<ToolMap>(TOOL_MAP_KEY, {}));
+    setToolMapHydrated(true);
+  }, []);
+
+  const persist = useCallback((next: ToolMap) => {
+    try {
+      window.localStorage.setItem(TOOL_MAP_KEY, JSON.stringify(next));
+    } catch {
+      /* storage unavailable */
+    }
   }, []);
 
   const setToolFor = useCallback((section: SectionKey, tool: string) => {
     setToolMapState((prev) => {
       const next = { ...prev, [section]: tool };
-      try {
-        window.localStorage.setItem(TOOL_MAP_KEY, JSON.stringify(next));
-      } catch {
-        /* storage unavailable */
-      }
+      persist(next);
       return next;
     });
-  }, []);
+  }, [persist]);
 
-  return { toolMap, setToolFor };
+  const clearToolFor = useCallback((section: SectionKey) => {
+    setToolMapState((prev) => {
+      const next = { ...prev };
+      delete next[section];
+      persist(next);
+      return next;
+    });
+  }, [persist]);
+
+  return { toolMap, setToolFor, clearToolFor, toolMapHydrated };
 }
