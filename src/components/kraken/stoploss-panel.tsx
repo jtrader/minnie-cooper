@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, ShieldAlert, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 import { BridgeErrorNotice } from "./bridge-error-notice";
 import { CurveEditor } from "./curve-editor";
 import { TradingViewChart } from "./tradingview-chart";
+import { MarketsPanel } from "./markets-panel";
 import { callTool, extractPayload, listTools } from "@/lib/kraken/client";
 import { guessTool, pairArgs } from "@/lib/kraken/discovery";
 import { parseTicker } from "@/lib/kraken/parse";
@@ -30,9 +31,19 @@ import {
   type StopLossPlan,
 } from "@/lib/kraken/stoploss";
 import { formatNumber, formatTime } from "@/lib/kraken/format";
+import {
+  DEFAULT_HOURS,
+  TIMEFRAMES,
+  clearDraft,
+  listDraftPairs,
+  loadDraft,
+  loadTimeframe,
+  saveDraft,
+  saveTimeframe,
+  type ChartTimeframe,
+} from "@/lib/kraken/drafts";
 import type { BridgeSettings } from "@/lib/kraken/types";
 
-const PAIRS = ["XBTUSD", "ETHUSD", "SOLUSD", "XBTEUR", "ETHEUR"];
 const HORIZONS = [
   { label: "1h", hours: 1 },
   { label: "6h", hours: 6 },
@@ -43,13 +54,54 @@ const HORIZONS = [
 export function StopLossPanel({ settings, configured }: { settings: BridgeSettings; configured: boolean }) {
   const queryClient = useQueryClient();
   const [pair, setPair] = useState("XBTUSD");
-  const [hours, setHours] = useState(6);
+  const [hours, setHours] = useState(DEFAULT_HOURS);
   const [volume, setVolume] = useState("");
   const [armed, setArmed] = useState(false);
   const [points, setPoints] = useState<CurvePoint[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [startTime] = useState(() => Date.now());
-  const endTime = startTime + hours * 3_600_000;
+  const [timeframe, setTimeframe] = useState<ChartTimeframe>("15");
+  const [draftPairs, setDraftPairs] = useState<Set<string>>(new Set());
+  const hydratedRef = useRef(false);
+
+  const refreshDraftPairs = useCallback(() => setDraftPairs(new Set(listDraftPairs())), []);
+
+  // Restore the selected pair's draft on mount (survives a full page reload).
+  useEffect(() => {
+    const restored = loadDraft(pair);
+    setPoints(restored.points);
+    setHours(restored.hours);
+    setTimeframe(loadTimeframe());
+    refreshDraftPairs();
+    hydratedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectPair = useCallback(
+    (next: string) => {
+      if (next === pair) return;
+      const restored = loadDraft(next);
+      setPair(next);
+      setPoints(restored.points);
+      setHours(restored.hours);
+    },
+    [pair],
+  );
+
+  // Debounced per-pair draft persistence.
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    const timer = window.setTimeout(() => {
+      saveDraft(pair, { points, hours });
+      refreshDraftPairs();
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [pair, points, hours, refreshDraftPairs]);
+
+  const pickTimeframe = (value: ChartTimeframe) => {
+    setTimeframe(value);
+    saveTimeframe(value);
+  };
 
   const toolsQuery = useQuery({
     queryKey: ["tools", settings.baseUrl, settings.token],
@@ -88,6 +140,8 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       }),
     onSuccess: () => {
       setPoints([]);
+      clearDraft(pair);
+      refreshDraftPairs();
       void queryClient.invalidateQueries({ queryKey: ["stoploss"] });
     },
   });
