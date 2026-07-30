@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Settings2 } from "lucide-react";
+import { Settings2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -85,6 +85,13 @@ function Dashboard() {
               Kraken REST API {configured ? `· bridge ${settings.baseUrl}` : "· bridge not configured"}
             </p>
           </div>
+          <div className="flex items-center gap-2">
+          <Link
+            to="/stop-loss"
+            className="inline-flex items-center gap-1.5 rounded-md border border-input px-2.5 py-1.5 text-xs font-medium hover:bg-accent"
+          >
+            <ShieldAlert className="h-3.5 w-3.5" /> Stop-Loss
+          </Link>
           <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
@@ -103,6 +110,7 @@ function Dashboard() {
               />
             </DialogContent>
           </Dialog>
+          </div>
         </header>
 
         <div className="grid gap-3 lg:grid-cols-2">
