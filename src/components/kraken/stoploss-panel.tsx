@@ -18,7 +18,9 @@ import {
 import { BridgeErrorNotice } from "./bridge-error-notice";
 import { CurveEditor } from "./curve-editor";
 import { TradingViewChart } from "./tradingview-chart";
-import { fetchKrakenTicker } from "@/lib/kraken/direct.functions";
+import { callTool, extractPayload, listTools } from "@/lib/kraken/client";
+import { guessTool, pairArgs } from "@/lib/kraken/discovery";
+import { parseTicker } from "@/lib/kraken/parse";
 import {
   cancelStopLossPlan,
   createStopLossPlan,
@@ -49,13 +51,24 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   const [startTime] = useState(() => Date.now());
   const endTime = startTime + hours * 3_600_000;
 
+  const toolsQuery = useQuery({
+    queryKey: ["tools", settings.baseUrl, settings.token],
+    enabled: configured,
+    retry: false,
+    queryFn: () => listTools(settings),
+  });
+  const tools = toolsQuery.data ?? [];
+  const tickerTool = guessTool(tools, "ticker").tool;
+
   const ticker = useQuery({
-    queryKey: ["kraken", "ticker", pair],
+    queryKey: ["ticker", settings.baseUrl, tickerTool?.name, pair],
+    enabled: configured && Boolean(tickerTool),
     retry: false,
     refetchInterval: 10_000,
-    queryFn: () => fetchKrakenTicker({ data: { pairs: pair } }),
+    queryFn: async () =>
+      extractPayload(await callTool(settings, tickerTool!.name, pairArgs(tickerTool, pair))),
   });
-  const marketPrice = ticker.data?.rows?.[0]?.price ?? null;
+  const marketPrice = parseTicker(ticker.data, pair).price;
 
   const plans = useQuery({
     queryKey: ["stoploss", settings.baseUrl, settings.token],
