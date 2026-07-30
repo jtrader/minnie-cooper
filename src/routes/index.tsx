@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Settings2, ShieldAlert } from "lucide-react";
+import { OptimalLogo } from "@/components/kraken/optimal-logo";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
