@@ -155,6 +155,24 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   const validPoints = sorted.length >= 2 && sorted.every((p, i) => i === 0 || p.t > sorted[i - 1].t);
   const nowCurve = curvePriceAt(sorted, Date.now());
 
+  const endTime = startTime + hours * 3_600_000;
+  const activePlan = (plans.data ?? []).find(
+    (plan) => plan.pair === pair && plan.status === "active",
+  );
+  const overlayPoints = activePlan?.points ?? [];
+  const activePlanPairs = useMemo(
+    () =>
+      new Set(
+        (plans.data ?? []).filter((plan) => plan.status === "active").map((plan) => plan.pair),
+      ),
+    [plans.data],
+  );
+
+  // Always widen the visible domain so restored points are never clipped out of view.
+  const domainPoints = [...sorted, ...overlayPoints];
+  const domainStart = domainPoints.reduce((min, p) => Math.min(min, p.t), startTime);
+  const domainEnd = domainPoints.reduce((max, p) => Math.max(max, p.t), endTime);
+
   const submit = () => {
     if (armed) {
       setConfirmOpen(true);
@@ -172,11 +190,41 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   }
 
   return (
-    <div className="space-y-3">
+    <div className="grid gap-3 lg:grid-cols-[220px_1fr]">
+      <MarketsPanel
+        pair={pair}
+        onSelect={selectPair}
+        activePlanPairs={activePlanPairs}
+        draftPairs={draftPairs}
+      />
+      <div className="min-w-0 space-y-3">
       <section className="rounded-lg border border-border bg-card">
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
           <h2 className="text-sm font-semibold tracking-tight">Draw stop-loss curve</h2>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                candles
+              </span>
+              {TIMEFRAMES.map((tf) => (
+                <button
+                  key={tf.value}
+                  type="button"
+                  onClick={() => pickTimeframe(tf.value)}
+                  className={`rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors ${
+                    timeframe === tf.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tf.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                horizon
+              </span>
             {HORIZONS.map((horizon) => (
               <button
                 key={horizon.label}
@@ -191,21 +239,31 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
                 {horizon.label}
               </button>
             ))}
+            </div>
           </div>
         </header>
 
         <div className="p-3">
           <div className="relative overflow-hidden rounded-md border border-border/60">
             <div className="absolute inset-0 opacity-60">
-              <TradingViewChart symbol={pair} />
+              <TradingViewChart symbol={pair} interval={timeframe} />
             </div>
             <div className="relative">
               <CurveEditor
                 points={points}
                 onChange={setPoints}
-                startTime={startTime}
-                endTime={endTime}
+                startTime={domainStart}
+                endTime={domainEnd}
                 marketPrice={marketPrice}
+                overlayPoints={overlayPoints}
+                overlayLabel={
+                  activePlan
+                    ? `Active plan · floor ${formatNumber(
+                        activePlan.lastCurvePrice ?? curvePriceAt(activePlan.points, Date.now()),
+                        2,
+                      )}`
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -214,28 +272,15 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1">
                 <Label className="text-[11px]">Pair</Label>
-                <div className="flex flex-wrap gap-1">
-                  {PAIRS.map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setPair(preset)}
-                      className={`rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors ${
-                        pair === preset
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
                 <Input
                   value={pair}
-                  onChange={(event) => setPair(event.target.value.toUpperCase())}
+                  onChange={(event) => selectPair(event.target.value.toUpperCase())}
                   className="h-7 font-mono text-[11px]"
                   aria-label="Trading pair"
                 />
+                <p className="text-[10px] text-muted-foreground">
+                  Pick from Markets, or retype if the bridge uses a different code.
+                </p>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="sl-volume" className="text-[11px]">
