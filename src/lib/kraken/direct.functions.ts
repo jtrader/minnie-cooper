@@ -9,7 +9,7 @@ import {
   mapTrades,
 } from "./kraken-api.server";
 
-type Failure = { error: { kind: string; message: string } };
+type Failure = { error: { kind: string; message: string } | null };
 
 function toFailure(error: unknown): Failure {
   if (error instanceof KrakenApiError) {
@@ -20,9 +20,11 @@ function toFailure(error: unknown): Failure {
 
 export const fetchKrakenBalances = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    return { rows: mapBalances(await krakenPrivate("Balance")) };
+    return { rows: mapBalances(await krakenPrivate("Balance")), error: null, ...{} } as {
+      rows: ReturnType<typeof mapBalances>;
+    } & Failure;
   } catch (error) {
-    return { rows: [], ...toFailure(error) };
+    return { rows: [], ...toFailure(error) } as { rows: ReturnType<typeof mapBalances> } & Failure;
   }
 });
 
@@ -32,9 +34,11 @@ export const fetchKrakenTicker = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data }) => {
     try {
-      return { rows: mapTicker(await krakenPublic("Ticker", { pair: data.pairs })) };
+      return { rows: mapTicker(await krakenPublic("Ticker", { pair: data.pairs })), error: null } as {
+        rows: ReturnType<typeof mapTicker>;
+      } & Failure;
     } catch (error) {
-      return { rows: [], ...toFailure(error) };
+      return { rows: [], ...toFailure(error) } as { rows: ReturnType<typeof mapTicker> } & Failure;
     }
   });
 
@@ -44,8 +48,11 @@ export const fetchKrakenActivity = createServerFn({ method: "GET" }).handler(asy
       krakenPrivate("TradesHistory"),
       krakenPrivate("OpenOrders"),
     ]);
-    return { rows: [...mapOrders(ordersResult), ...mapTrades(tradesResult)].slice(0, 100) };
+    return {
+      rows: [...mapOrders(ordersResult), ...mapTrades(tradesResult)].slice(0, 100),
+      error: null,
+    } as { rows: ReturnType<typeof mapOrders> } & Failure;
   } catch (error) {
-    return { rows: [], ...toFailure(error) };
+    return { rows: [], ...toFailure(error) } as { rows: ReturnType<typeof mapOrders> } & Failure;
   }
 });
