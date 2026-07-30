@@ -37,8 +37,10 @@ import {
   clearDraft,
   listDraftPairs,
   loadDraft,
+  loadSelectedPair,
   loadTimeframe,
   saveDraft,
+  saveSelectedPair,
   saveTimeframe,
   type ChartTimeframe,
 } from "@/lib/kraken/drafts";
@@ -68,7 +70,9 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
 
   // Restore the selected pair's draft on mount (survives a full page reload).
   useEffect(() => {
-    const restored = loadDraft(pair);
+    const restoredPair = loadSelectedPair(pair);
+    const restored = loadDraft(restoredPair);
+    setPair(restoredPair);
     setPoints(restored.points);
     setHours(restored.hours);
     setTimeframe(loadTimeframe());
@@ -82,6 +86,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       if (next === pair) return;
       const restored = loadDraft(next);
       setPair(next);
+      saveSelectedPair(next);
       setPoints(restored.points);
       setHours(restored.hours);
     },
