@@ -20,6 +20,13 @@ import { CurveEditor, type CurveTool } from "./curve-editor";
 import { TradingViewChart } from "./tradingview-chart";
 import { MarketsPanel } from "./markets-panel";
 import { ObjectsPanel } from "./objects-panel";
+import { HistoryContextMenu } from "./history-context-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SideDrawer } from "./side-drawer";
 import { callTool, extractPayload, listTools } from "@/lib/kraken/client";
 import { guessTool, pairArgs } from "@/lib/kraken/discovery";
@@ -95,7 +102,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
     },
     [],
   );
-  const history = useDrawingHistory({ points, annotations }, applySnapshot);
+  const history = useDrawingHistory(pair, { points, annotations }, applySnapshot);
 
   /** Highlight is set only by discrete interactions (click / mousedown), never on move. */
   const highlight = useCallback(
@@ -156,7 +163,6 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       setPoints(restored.points);
       setHours(restored.hours);
       setAnnotations(restored.annotations);
-      history.reset({ points: restored.points, annotations: restored.annotations });
       setMarketsCollapsed(loadDrawerCollapsed("markets", next));
       setObjectsCollapsed(loadDrawerCollapsed("objects", next));
       setHighlightedId(loadHighlight(next));
