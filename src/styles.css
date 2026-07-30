@@ -151,3 +151,18 @@
     color: var(--color-foreground);
   }
 }
+
+@keyframes highlight-pulse {
+  0% {
+    opacity: 0.75;
+    stroke-width: 26;
+  }
+  100% {
+    opacity: 0;
+    stroke-width: 10;
+  }
+}
+
+.highlight-pulse {
+  animation: highlight-pulse 1s ease-out forwards;
+}
