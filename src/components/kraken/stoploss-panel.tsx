@@ -41,10 +41,12 @@ import {
   listDraftPairs,
   loadDraft,
   loadDrawerCollapsed,
+  loadHighlight,
   loadSelectedPair,
   loadTimeframe,
   saveDraft,
   saveDrawerCollapsed,
+  saveHighlight,
   saveSelectedPair,
   saveTimeframe,
   type ChartTimeframe,
@@ -80,9 +82,22 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   const [marketsCollapsed, setMarketsCollapsed] = useState(false);
   const [objectsCollapsed, setObjectsCollapsed] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [pulseKey, setPulseKey] = useState(0);
   const hydratedRef = useRef(false);
 
   const refreshDraftPairs = useCallback(() => setDraftPairs(new Set(listDraftPairs())), []);
+
+  /** Highlight is set only by discrete interactions (click / mousedown), never on move. */
+  const highlight = useCallback(
+    (id: string | null) => {
+      setHighlightedId((prev) => {
+        if (prev === id) return prev;
+        setPulseKey((k) => k + 1);
+        return id;
+      });
+    },
+    [],
+  );
 
   // Restore the selected pair's draft on mount (survives a full page reload).
   useEffect(() => {
@@ -93,8 +108,9 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
     setHours(restored.hours);
     setAnnotations(restored.annotations);
     setTimeframe(loadTimeframe());
-    setMarketsCollapsed(loadDrawerCollapsed("markets"));
-    setObjectsCollapsed(loadDrawerCollapsed("objects"));
+    setMarketsCollapsed(loadDrawerCollapsed("markets", restoredPair));
+    setObjectsCollapsed(loadDrawerCollapsed("objects", restoredPair));
+    setHighlightedId(loadHighlight(restoredPair));
     refreshDraftPairs();
     hydratedRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,24 +118,23 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
 
   const toggleMarkets = useCallback(() => {
     setMarketsCollapsed((prev) => {
-      saveDrawerCollapsed("markets", !prev);
+      saveDrawerCollapsed("markets", pair, !prev);
       return !prev;
     });
-  }, []);
+  }, [pair]);
 
   const toggleObjects = useCallback(() => {
     setObjectsCollapsed((prev) => {
-      saveDrawerCollapsed("objects", !prev);
+      saveDrawerCollapsed("objects", pair, !prev);
       return !prev;
     });
-  }, []);
+  }, [pair]);
 
-  // Highlights are transient: clear the glow shortly after selection.
+  // Highlight persists until it changes; only persist it per-pair.
   useEffect(() => {
-    if (!highlightedId) return;
-    const timer = window.setTimeout(() => setHighlightedId(null), 2200);
-    return () => window.clearTimeout(timer);
-  }, [highlightedId]);
+    if (!hydratedRef.current) return;
+    saveHighlight(pair, highlightedId);
+  }, [pair, highlightedId]);
 
   const selectPair = useCallback(
     (next: string) => {
@@ -130,6 +145,10 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       setPoints(restored.points);
       setHours(restored.hours);
       setAnnotations(restored.annotations);
+      setMarketsCollapsed(loadDrawerCollapsed("markets", next));
+      setObjectsCollapsed(loadDrawerCollapsed("objects", next));
+      setHighlightedId(loadHighlight(next));
+      setPulseKey((k) => k + 1);
     },
     [pair],
   );
@@ -346,6 +365,8 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
                 annotations={annotations}
                 onAnnotationsChange={setAnnotations}
                 highlightedId={highlightedId}
+                onHighlight={highlight}
+                pulseKey={pulseKey}
                 overlayLabel={
                   activePlan
                     ? `Active plan · floor ${formatNumber(
@@ -495,7 +516,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
           points={sorted}
           annotations={annotations}
           highlightedId={highlightedId}
-          onHighlight={setHighlightedId}
+          onHighlight={highlight}
           onClearCurve={() => setPoints([])}
           onDeleteAnnotation={(id) =>
             setAnnotations((prev) => prev.filter((shape) => shape.id !== id))
