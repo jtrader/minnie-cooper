@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FLAT_WATCHLIST, WATCHLIST, toKrakenPair } from "@/lib/kraken/watchlist";
 
@@ -7,15 +7,46 @@ export type MarketsPanelProps = {
   onSelect: (pair: string) => void;
   activePlanPairs: Set<string>;
   draftPairs: Set<string>;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 };
 
-export function MarketsPanel({ pair, onSelect, activePlanPairs, draftPairs }: MarketsPanelProps) {
+export function MarketsPanel({
+  pair,
+  onSelect,
+  activePlanPairs,
+  draftPairs,
+  collapsed = false,
+  onToggleCollapsed,
+}: MarketsPanelProps) {
   const index = FLAT_WATCHLIST.findIndex((entry) => entry.pair === pair);
   const step = (delta: number) => {
     const base = index === -1 ? 0 : index;
     const next = (base + delta + FLAT_WATCHLIST.length) % FLAT_WATCHLIST.length;
     onSelect(FLAT_WATCHLIST[next].pair);
   };
+
+  if (collapsed) {
+    return (
+      <section className="flex h-full flex-col items-center rounded-lg border border-border bg-card py-2">
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          aria-expanded={false}
+          aria-label="Expand Markets panel"
+          className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <PanelLeftOpen className="h-4 w-4" />
+        </button>
+        <span
+          className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+          style={{ writingMode: "vertical-rl" }}
+        >
+          Markets
+        </span>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-lg border border-border bg-card">
@@ -28,6 +59,17 @@ export function MarketsPanel({ pair, onSelect, activePlanPairs, draftPairs }: Ma
           <Button variant="outline" size="sm" className="h-6 px-1.5" onClick={() => step(1)} aria-label="Next market">
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>
+          {onToggleCollapsed ? (
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              aria-expanded
+              aria-label="Collapse Markets panel"
+              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </header>
 

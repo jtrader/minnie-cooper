@@ -26,6 +26,8 @@ export type CurveEditorProps = {
   /** Visual-only ellipse annotations, never part of the submitted curve. */
   annotations?: EllipseAnnotation[];
   onAnnotationsChange?: (annotations: EllipseAnnotation[]) => void;
+  /** Id of the shape to highlight: "curve" for the drawn floor, or an annotation id. */
+  highlightedId?: string | null;
   className?: string;
 };
 
@@ -59,6 +61,7 @@ export function CurveEditor({
   tool = "curve",
   annotations,
   onAnnotationsChange,
+  highlightedId,
   className,
 }: CurveEditorProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -260,13 +263,24 @@ export function CurveEditor({
         ) : null}
 
         {sorted.length > 0 ? (
+          <>
+            {highlightedId === "curve" ? (
+              <path
+                d={flatPath}
+                className="fill-none stroke-loss/40"
+                strokeWidth={12}
+                strokeLinejoin="round"
+                pointerEvents="none"
+              />
+            ) : null}
           <path
             d={flatPath}
             className="fill-none stroke-loss"
-            strokeWidth={2}
+            strokeWidth={highlightedId === "curve" ? 4 : 2}
             strokeLinejoin="round"
             pointerEvents="none"
           />
+          </>
         ) : null}
 
         {sortedOverlay.length > 0 ? (
@@ -308,22 +322,25 @@ export function CurveEditor({
           />
         ))}
 
-        {shapes.map((shape) => (
+        {shapes.map((shape) => {
+          const active = highlightedId === shape.id;
+          return (
           <ellipse
             key={shape.id}
             cx={xFor(shape.ct)}
             cy={yFor(shape.cprice)}
             rx={Math.abs(xFor(shape.ct + shape.rt) - xFor(shape.ct))}
             ry={Math.abs(yFor(shape.cprice - shape.rprice) - yFor(shape.cprice))}
-            className="cursor-pointer fill-primary/10 stroke-primary"
-            strokeWidth={2}
+            className={`cursor-pointer stroke-primary ${active ? "fill-primary/25" : "fill-primary/10"}`}
+            strokeWidth={active ? 5 : 2}
             strokeDasharray="7 5"
             onDoubleClick={(event) => {
               event.stopPropagation();
               onAnnotationsChange?.(shapes.filter((s) => s.id !== shape.id));
             }}
           />
-        ))}
+          );
+        })}
 
         {drag && tool === "trendline" ? (
           <line
