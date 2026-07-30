@@ -46,7 +46,7 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const { settings, setSettings, hydrated, configured } = useBridgeSettings();
-  const { toolMap, setToolFor } = useToolMap();
+  const { toolMap, setToolFor, toolMapHydrated } = useToolMap();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const toolsQuery = useQuery({
@@ -60,14 +60,16 @@ function Dashboard() {
 
   const resolve = (section: SectionKey) => {
     const chosen = toolMap[section];
-    if (chosen && tools.some((tool) => tool.name === chosen)) {
+    // Keep the saved pick while the tool list is still loading, and whenever
+    // the bridge still exposes it.
+    if (chosen && (tools.length === 0 || tools.some((tool) => tool.name === chosen))) {
       return { name: chosen, needsPicker: true };
     }
     const guess = guessTool(tools, section);
     return { name: guess.tool?.name, needsPicker: !guess.confident };
   };
 
-  if (!hydrated) return null;
+  if (!hydrated || !toolMapHydrated) return null;
 
   const balances = resolve("balances");
   const ticker = resolve("ticker");
