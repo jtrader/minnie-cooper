@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { CurvePoint } from "@/lib/kraken/stoploss";
+import type { CurvePoint, EllipseAnnotation } from "@/lib/kraken/stoploss";
 import { formatNumber } from "@/lib/kraken/format";
+
+export type CurveTool = "curve" | "trendline" | "ellipse";
 
 /**
  * Implementation-agnostic contract for a price-vs-time curve drawing surface.
@@ -19,6 +21,11 @@ export type CurveEditorProps = {
   /** Read-only curve of an already-active plan, drawn as a dashed overlay. */
   overlayPoints?: CurvePoint[];
   overlayLabel?: string;
+  /** Active drawing tool. Defaults to "curve" (legacy behaviour). */
+  tool?: CurveTool;
+  /** Visual-only ellipse annotations, never part of the submitted curve. */
+  annotations?: EllipseAnnotation[];
+  onAnnotationsChange?: (annotations: EllipseAnnotation[]) => void;
   className?: string;
 };
 
@@ -49,10 +56,15 @@ export function CurveEditor({
   marketPrice,
   overlayPoints,
   overlayLabel,
+  tool = "curve",
+  annotations,
+  onAnnotationsChange,
   className,
 }: CurveEditorProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [drag, setDrag] = useState<{ from: CurvePoint; to: CurvePoint } | null>(null);
+  const shapes = annotations ?? [];
 
   const range = useMemo(
     () => niceRange([...points, ...(overlayPoints ?? [])], marketPrice),
@@ -107,12 +119,51 @@ export function CurveEditor({
       : "";
 
   const handleBackgroundClick = (event: React.MouseEvent<SVGRectElement>) => {
+    if (tool !== "curve") return;
     const point = toDomain(event.clientX, event.clientY);
     if (!point) return;
     onChange([...points, point].sort((a, b) => a.t - b.t));
   };
 
+  const handleBackgroundDown = (event: React.MouseEvent<SVGRectElement>) => {
+    if (tool === "curve") return;
+    const point = toDomain(event.clientX, event.clientY);
+    if (!point) return;
+    setDrag({ from: point, to: point });
+  };
+
+  const finishDrag = () => {
+    if (!drag) return;
+    const { from, to } = drag;
+    setDrag(null);
+    if (tool === "trendline") {
+      if (from.t === to.t) return;
+      onChange([from, to].sort((a, b) => a.t - b.t));
+      return;
+    }
+    if (tool === "ellipse") {
+      const rt = Math.abs(to.t - from.t) / 2;
+      const rprice = Math.abs(to.price - from.price) / 2;
+      if (rt <= 0 || rprice <= 0) return;
+      onAnnotationsChange?.([
+        ...shapes,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          ct: (from.t + to.t) / 2,
+          cprice: (from.price + to.price) / 2,
+          rt,
+          rprice,
+        },
+      ]);
+    }
+  };
+
   const handleMove = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (drag) {
+      const point = toDomain(event.clientX, event.clientY);
+      if (point) setDrag({ from: drag.from, to: point });
+      return;
+    }
     if (dragIndex === null) return;
     const point = toDomain(event.clientX, event.clientY);
     if (!point) return;
@@ -131,8 +182,14 @@ export function CurveEditor({
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="h-[380px] w-full touch-none select-none"
         onMouseMove={handleMove}
-        onMouseUp={() => setDragIndex(null)}
-        onMouseLeave={() => setDragIndex(null)}
+        onMouseUp={() => {
+          setDragIndex(null);
+          finishDrag();
+        }}
+        onMouseLeave={() => {
+          setDragIndex(null);
+          setDrag(null);
+        }}
         role="application"
         aria-label="Stop-loss curve editor: click to add a point, drag points to adjust"
       >
@@ -143,6 +200,7 @@ export function CurveEditor({
           height={plotH}
           className="fill-transparent"
           onClick={handleBackgroundClick}
+          onMouseDown={handleBackgroundDown}
         />
 
         {priceTicks.map((price) => (
@@ -239,6 +297,7 @@ export function CurveEditor({
             className="cursor-grab fill-loss stroke-background"
             strokeWidth={2}
             onMouseDown={(event) => {
+              if (tool !== "curve") return;
               event.stopPropagation();
               setDragIndex(index);
             }}
@@ -248,10 +307,56 @@ export function CurveEditor({
             }}
           />
         ))}
+
+        {shapes.map((shape) => (
+          <ellipse
+            key={shape.id}
+            cx={xFor(shape.ct)}
+            cy={yFor(shape.cprice)}
+            rx={Math.abs(xFor(shape.ct + shape.rt) - xFor(shape.ct))}
+            ry={Math.abs(yFor(shape.cprice - shape.rprice) - yFor(shape.cprice))}
+            className="cursor-pointer fill-primary/10 stroke-primary"
+            strokeWidth={2}
+            strokeDasharray="7 5"
+            onDoubleClick={(event) => {
+              event.stopPropagation();
+              onAnnotationsChange?.(shapes.filter((s) => s.id !== shape.id));
+            }}
+          />
+        ))}
+
+        {drag && tool === "trendline" ? (
+          <line
+            x1={xFor(drag.from.t)}
+            y1={yFor(drag.from.price)}
+            x2={xFor(drag.to.t)}
+            y2={yFor(drag.to.price)}
+            className="stroke-loss"
+            strokeWidth={2}
+            strokeDasharray="4 4"
+            pointerEvents="none"
+          />
+        ) : null}
+
+        {drag && tool === "ellipse" ? (
+          <ellipse
+            cx={(xFor(drag.from.t) + xFor(drag.to.t)) / 2}
+            cy={(yFor(drag.from.price) + yFor(drag.to.price)) / 2}
+            rx={Math.abs(xFor(drag.to.t) - xFor(drag.from.t)) / 2}
+            ry={Math.abs(yFor(drag.to.price) - yFor(drag.from.price)) / 2}
+            className="fill-primary/10 stroke-primary"
+            strokeWidth={2}
+            strokeDasharray="7 5"
+            pointerEvents="none"
+          />
+        ) : null}
       </svg>
       <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-        Click the plane to add a curve point · drag a point to move it · double-click a point to
-        remove it. The floor is flat before the first and after the last point.
+        {tool === "curve"
+          ? "Click the plane to add a curve point · drag a point to move it · double-click a point to remove it. The floor is flat before the first and after the last point."
+          : tool === "trendline"
+            ? "Drag from start to end to replace the whole floor with a straight trendline."
+            : "Drag a box to draw an ellipse annotation · double-click one to delete it. Ellipses are visual only and are never sent to the bridge."}
       </p>
     </div>
   );

@@ -2,6 +2,22 @@ import { BridgeError, type BridgeSettings } from "./types";
 
 export type CurvePoint = { t: number; price: number };
 
+/**
+ * Visual-only chart annotation, stored in domain space (time + price).
+ * Never converted into stop-loss trigger data and never sent to the bridge.
+ */
+export type EllipseAnnotation = {
+  id: string;
+  /** Center time (ms epoch). */
+  ct: number;
+  /** Center price. */
+  cprice: number;
+  /** Half-width in ms. */
+  rt: number;
+  /** Half-height in price. */
+  rprice: number;
+};
+
 export type StopLossPlan = {
   id: string;
   pair: string;

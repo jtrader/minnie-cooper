@@ -1,6 +1,10 @@
-import type { CurvePoint } from "./stoploss";
+import type { CurvePoint, EllipseAnnotation } from "./stoploss";
 
-export type StopLossDraft = { points: CurvePoint[]; hours: number };
+export type StopLossDraft = {
+  points: CurvePoint[];
+  hours: number;
+  annotations: EllipseAnnotation[];
+};
 
 export const DEFAULT_HOURS = 6;
 const DRAFT_PREFIX = "stoploss-draft:";
@@ -8,11 +12,23 @@ const TIMEFRAME_KEY = "stoploss-timeframe";
 
 const draftKey = (pair: string) => `${DRAFT_PREFIX}${pair}`;
 
+function isAnnotation(value: unknown): value is EllipseAnnotation {
+  if (!value || typeof value !== "object") return false;
+  const a = value as Record<string, unknown>;
+  return (
+    typeof a.id === "string" &&
+    ["ct", "cprice", "rt", "rprice"].every(
+      (k) => typeof a[k] === "number" && Number.isFinite(a[k] as number),
+    )
+  );
+}
+
 export function loadDraft(pair: string): StopLossDraft {
-  if (typeof window === "undefined") return { points: [], hours: DEFAULT_HOURS };
+  const empty: StopLossDraft = { points: [], hours: DEFAULT_HOURS, annotations: [] };
+  if (typeof window === "undefined") return empty;
   try {
     const raw = window.localStorage.getItem(draftKey(pair));
-    if (!raw) return { points: [], hours: DEFAULT_HOURS };
+    if (!raw) return empty;
     const parsed = JSON.parse(raw) as Partial<StopLossDraft>;
     const points = Array.isArray(parsed.points)
       ? parsed.points.filter(
@@ -21,16 +37,19 @@ export function loadDraft(pair: string): StopLossDraft {
         )
       : [];
     const hours = typeof parsed.hours === "number" && parsed.hours > 0 ? parsed.hours : DEFAULT_HOURS;
-    return { points, hours };
+    const annotations = Array.isArray(parsed.annotations)
+      ? parsed.annotations.filter(isAnnotation)
+      : [];
+    return { points, hours, annotations };
   } catch {
-    return { points: [], hours: DEFAULT_HOURS };
+    return empty;
   }
 }
 
 export function saveDraft(pair: string, draft: StopLossDraft): void {
   if (typeof window === "undefined") return;
   try {
-    if (draft.points.length === 0) {
+    if (draft.points.length === 0 && draft.annotations.length === 0) {
       window.localStorage.removeItem(draftKey(pair));
       return;
     }
