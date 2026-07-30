@@ -11,9 +11,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { SettingsPanel } from "@/components/kraken/settings-panel";
-import { DirectBalancesCard } from "@/components/kraken/direct-balances-card";
-import { DirectMarketCard } from "@/components/kraken/direct-market-card";
-import { DirectActivityCard } from "@/components/kraken/direct-activity-card";
 import { BalancesCard } from "@/components/kraken/balances-card";
 import { MarketCard } from "@/components/kraken/market-card";
 import { TradesCard } from "@/components/kraken/trades-card";
@@ -82,7 +79,7 @@ function Dashboard() {
           <div>
             <h1 className="text-base font-semibold tracking-tight">Kraken bridge dashboard</h1>
             <p className="font-mono text-[11px] text-muted-foreground">
-              Kraken REST API {configured ? `· bridge ${settings.baseUrl}` : "· bridge not configured"}
+              {configured ? `kraken-bridge: ${settings.baseUrl}` : "kraken-bridge not configured"}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -113,17 +110,8 @@ function Dashboard() {
           </div>
         </header>
 
-        <div className="grid gap-3 lg:grid-cols-2">
-          <DirectBalancesCard />
-          <DirectMarketCard />
-        </div>
-        <DirectActivityCard />
-
         {configured ? (
           <>
-            <h2 className="pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Local bridge
-            </h2>
             {toolsQuery.error ? <BridgeErrorNotice error={toolsQuery.error} /> : null}
             {toolsQuery.isLoading ? (
               <p className="text-xs text-muted-foreground">Discovering tools…</p>
