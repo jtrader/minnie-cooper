@@ -77,8 +77,8 @@ function Dashboard() {
     <main className="min-h-screen bg-background px-4 py-4">
       <div className="mx-auto max-w-6xl space-y-3">
         <header className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight">Kraken bridge dashboard</h1>
+          <div className="flex flex-col gap-0.5">
+            <OptimalLogo />
             <p className="font-mono text-[11px] text-muted-foreground">
               {configured ? `kraken-bridge: ${settings.baseUrl}` : "kraken-bridge not configured"}
             </p>
