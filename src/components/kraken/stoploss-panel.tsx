@@ -393,6 +393,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 }
