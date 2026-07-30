@@ -1,7 +1,13 @@
 import { useEffect, useRef } from "react";
 
 /** Visual-only candlestick backdrop. Cannot be read programmatically. */
-export function TradingViewChart({ symbol }: { symbol: string }) {
+export function TradingViewChart({
+  symbol,
+  interval = "15",
+}: {
+  symbol: string;
+  interval?: string;
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -20,7 +26,7 @@ export function TradingViewChart({ symbol }: { symbol: string }) {
     script.innerHTML = JSON.stringify({
       autosize: true,
       symbol: `KRAKEN:${symbol}`,
-      interval: "15",
+      interval,
       timezone: "Etc/UTC",
       theme: "dark",
       style: "1",
@@ -35,7 +41,7 @@ export function TradingViewChart({ symbol }: { symbol: string }) {
     return () => {
       container.innerHTML = "";
     };
-  }, [symbol]);
+  }, [symbol, interval]);
 
   return (
     <div

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, ShieldAlert, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 import { BridgeErrorNotice } from "./bridge-error-notice";
 import { CurveEditor } from "./curve-editor";
 import { TradingViewChart } from "./tradingview-chart";
+import { MarketsPanel } from "./markets-panel";
 import { callTool, extractPayload, listTools } from "@/lib/kraken/client";
 import { guessTool, pairArgs } from "@/lib/kraken/discovery";
 import { parseTicker } from "@/lib/kraken/parse";
@@ -30,9 +31,21 @@ import {
   type StopLossPlan,
 } from "@/lib/kraken/stoploss";
 import { formatNumber, formatTime } from "@/lib/kraken/format";
+import {
+  DEFAULT_HOURS,
+  TIMEFRAMES,
+  clearDraft,
+  listDraftPairs,
+  loadDraft,
+  loadSelectedPair,
+  loadTimeframe,
+  saveDraft,
+  saveSelectedPair,
+  saveTimeframe,
+  type ChartTimeframe,
+} from "@/lib/kraken/drafts";
 import type { BridgeSettings } from "@/lib/kraken/types";
 
-const PAIRS = ["XBTUSD", "ETHUSD", "SOLUSD", "XBTEUR", "ETHEUR"];
 const HORIZONS = [
   { label: "1h", hours: 1 },
   { label: "6h", hours: 6 },
@@ -43,13 +56,57 @@ const HORIZONS = [
 export function StopLossPanel({ settings, configured }: { settings: BridgeSettings; configured: boolean }) {
   const queryClient = useQueryClient();
   const [pair, setPair] = useState("XBTUSD");
-  const [hours, setHours] = useState(6);
+  const [hours, setHours] = useState(DEFAULT_HOURS);
   const [volume, setVolume] = useState("");
   const [armed, setArmed] = useState(false);
   const [points, setPoints] = useState<CurvePoint[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [startTime] = useState(() => Date.now());
-  const endTime = startTime + hours * 3_600_000;
+  const [timeframe, setTimeframe] = useState<ChartTimeframe>("15");
+  const [draftPairs, setDraftPairs] = useState<Set<string>>(new Set());
+  const hydratedRef = useRef(false);
+
+  const refreshDraftPairs = useCallback(() => setDraftPairs(new Set(listDraftPairs())), []);
+
+  // Restore the selected pair's draft on mount (survives a full page reload).
+  useEffect(() => {
+    const restoredPair = loadSelectedPair(pair);
+    const restored = loadDraft(restoredPair);
+    setPair(restoredPair);
+    setPoints(restored.points);
+    setHours(restored.hours);
+    setTimeframe(loadTimeframe());
+    refreshDraftPairs();
+    hydratedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectPair = useCallback(
+    (next: string) => {
+      if (next === pair) return;
+      const restored = loadDraft(next);
+      setPair(next);
+      saveSelectedPair(next);
+      setPoints(restored.points);
+      setHours(restored.hours);
+    },
+    [pair],
+  );
+
+  // Debounced per-pair draft persistence.
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    const timer = window.setTimeout(() => {
+      saveDraft(pair, { points, hours });
+      refreshDraftPairs();
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [pair, points, hours, refreshDraftPairs]);
+
+  const pickTimeframe = (value: ChartTimeframe) => {
+    setTimeframe(value);
+    saveTimeframe(value);
+  };
 
   const toolsQuery = useQuery({
     queryKey: ["tools", settings.baseUrl, settings.token],
@@ -88,6 +145,8 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       }),
     onSuccess: () => {
       setPoints([]);
+      clearDraft(pair);
+      refreshDraftPairs();
       void queryClient.invalidateQueries({ queryKey: ["stoploss"] });
     },
   });
@@ -100,6 +159,24 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   const sorted = useMemo(() => [...points].sort((a, b) => a.t - b.t), [points]);
   const validPoints = sorted.length >= 2 && sorted.every((p, i) => i === 0 || p.t > sorted[i - 1].t);
   const nowCurve = curvePriceAt(sorted, Date.now());
+
+  const endTime = startTime + hours * 3_600_000;
+  const activePlan = (plans.data ?? []).find(
+    (plan) => plan.pair === pair && plan.status === "active",
+  );
+  const overlayPoints = activePlan?.points ?? [];
+  const activePlanPairs = useMemo(
+    () =>
+      new Set(
+        (plans.data ?? []).filter((plan) => plan.status === "active").map((plan) => plan.pair),
+      ),
+    [plans.data],
+  );
+
+  // Always widen the visible domain so restored points are never clipped out of view.
+  const domainPoints = [...sorted, ...overlayPoints];
+  const domainStart = domainPoints.reduce((min, p) => Math.min(min, p.t), startTime);
+  const domainEnd = domainPoints.reduce((max, p) => Math.max(max, p.t), endTime);
 
   const submit = () => {
     if (armed) {
@@ -118,11 +195,41 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   }
 
   return (
-    <div className="space-y-3">
+    <div className="grid gap-3 lg:grid-cols-[220px_1fr]">
+      <MarketsPanel
+        pair={pair}
+        onSelect={selectPair}
+        activePlanPairs={activePlanPairs}
+        draftPairs={draftPairs}
+      />
+      <div className="min-w-0 space-y-3">
       <section className="rounded-lg border border-border bg-card">
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
           <h2 className="text-sm font-semibold tracking-tight">Draw stop-loss curve</h2>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                candles
+              </span>
+              {TIMEFRAMES.map((tf) => (
+                <button
+                  key={tf.value}
+                  type="button"
+                  onClick={() => pickTimeframe(tf.value)}
+                  className={`rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors ${
+                    timeframe === tf.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tf.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                horizon
+              </span>
             {HORIZONS.map((horizon) => (
               <button
                 key={horizon.label}
@@ -137,21 +244,31 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
                 {horizon.label}
               </button>
             ))}
+            </div>
           </div>
         </header>
 
         <div className="p-3">
           <div className="relative overflow-hidden rounded-md border border-border/60">
             <div className="absolute inset-0 opacity-60">
-              <TradingViewChart symbol={pair} />
+              <TradingViewChart symbol={pair} interval={timeframe} />
             </div>
             <div className="relative">
               <CurveEditor
                 points={points}
                 onChange={setPoints}
-                startTime={startTime}
-                endTime={endTime}
+                startTime={domainStart}
+                endTime={domainEnd}
                 marketPrice={marketPrice}
+                overlayPoints={overlayPoints}
+                overlayLabel={
+                  activePlan
+                    ? `Active plan · floor ${formatNumber(
+                        activePlan.lastCurvePrice ?? curvePriceAt(activePlan.points, Date.now()),
+                        2,
+                      )}`
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -160,28 +277,15 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1">
                 <Label className="text-[11px]">Pair</Label>
-                <div className="flex flex-wrap gap-1">
-                  {PAIRS.map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setPair(preset)}
-                      className={`rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors ${
-                        pair === preset
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
                 <Input
                   value={pair}
-                  onChange={(event) => setPair(event.target.value.toUpperCase())}
+                  onChange={(event) => selectPair(event.target.value.toUpperCase())}
                   className="h-7 font-mono text-[11px]"
                   aria-label="Trading pair"
                 />
+                <p className="text-[10px] text-muted-foreground">
+                  Pick from Markets, or retype if the bridge uses a different code.
+                </p>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="sl-volume" className="text-[11px]">
@@ -294,6 +398,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 }

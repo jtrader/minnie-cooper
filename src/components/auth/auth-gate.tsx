@@ -24,6 +24,7 @@ function Shell({ children }: { children: ReactNode }) {
 }
 
 export function AuthGate({ children }: { children: ReactNode }) {
+
   const [state, setState] = useState<GateState>("checking");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
