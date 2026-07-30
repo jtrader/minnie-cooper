@@ -119,3 +119,26 @@ export function saveSelectedPair(pair: string): void {
     /* storage unavailable */
   }
 }
+
+const DRAWER_KEY_PREFIX = "stoploss-drawer:";
+
+export type DrawerSide = "markets" | "objects";
+
+/** Collapsed state for a side drawer. Global (not per-pair), like the timeframe. */
+export function loadDrawerCollapsed(side: DrawerSide): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(`${DRAWER_KEY_PREFIX}${side}`) === "collapsed";
+  } catch {
+    return false;
+  }
+}
+
+export function saveDrawerCollapsed(side: DrawerSide, collapsed: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(`${DRAWER_KEY_PREFIX}${side}`, collapsed ? "collapsed" : "open");
+  } catch {
+    /* storage unavailable */
+  }
+}
