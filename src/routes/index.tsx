@@ -11,6 +11,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { SettingsPanel } from "@/components/kraken/settings-panel";
+import { DirectBalancesCard } from "@/components/kraken/direct-balances-card";
+import { DirectMarketCard } from "@/components/kraken/direct-market-card";
+import { DirectActivityCard } from "@/components/kraken/direct-activity-card";
 import { BalancesCard } from "@/components/kraken/balances-card";
 import { MarketCard } from "@/components/kraken/market-card";
 import { TradesCard } from "@/components/kraken/trades-card";
@@ -66,21 +69,6 @@ function Dashboard() {
 
   if (!hydrated) return null;
 
-  if (!configured) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
-          <h1 className="text-lg font-semibold tracking-tight">Connect your Kraken bridge</h1>
-          <p className="mt-1 mb-5 text-xs text-muted-foreground">
-            Point this dashboard at your locally running kraken-bridge service. Credentials stay in
-            this browser.
-          </p>
-          <SettingsPanel settings={settings} onSave={setSettings} />
-        </div>
-      </main>
-    );
-  }
-
   const balances = resolve("balances");
   const ticker = resolve("ticker");
   const trades = resolve("trades");
@@ -91,7 +79,9 @@ function Dashboard() {
         <header className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h1 className="text-base font-semibold tracking-tight">Kraken bridge dashboard</h1>
-            <p className="font-mono text-[11px] text-muted-foreground">{settings.baseUrl}</p>
+            <p className="font-mono text-[11px] text-muted-foreground">
+              Kraken REST API {configured ? `· bridge ${settings.baseUrl}` : "· bridge not configured"}
+            </p>
           </div>
           <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
             <DialogTrigger asChild>
@@ -113,37 +103,50 @@ function Dashboard() {
           </Dialog>
         </header>
 
-        {toolsQuery.error ? <BridgeErrorNotice error={toolsQuery.error} /> : null}
-        {toolsQuery.isLoading ? (
-          <p className="text-xs text-muted-foreground">Discovering tools…</p>
-        ) : null}
-
         <div className="grid gap-3 lg:grid-cols-2">
-          <BalancesCard
-            settings={settings}
-            tools={tools}
-            toolName={balances.name}
-            needsPicker={balances.needsPicker}
-            onSelectTool={(name) => setToolFor("balances", name)}
-          />
-          <MarketCard
-            settings={settings}
-            tools={tools}
-            toolName={ticker.name}
-            needsPicker={ticker.needsPicker}
-            onSelectTool={(name) => setToolFor("ticker", name)}
-          />
+          <DirectBalancesCard />
+          <DirectMarketCard />
         </div>
+        <DirectActivityCard />
 
-        <TradesCard
-          settings={settings}
-          tools={tools}
-          toolName={trades.name}
-          needsPicker={trades.needsPicker}
-          onSelectTool={(name) => setToolFor("trades", name)}
-        />
+        {configured ? (
+          <>
+            <h2 className="pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Local bridge
+            </h2>
+            {toolsQuery.error ? <BridgeErrorNotice error={toolsQuery.error} /> : null}
+            {toolsQuery.isLoading ? (
+              <p className="text-xs text-muted-foreground">Discovering tools…</p>
+            ) : null}
 
-        <ToolExplorer settings={settings} tools={tools} />
+            <div className="grid gap-3 lg:grid-cols-2">
+              <BalancesCard
+                settings={settings}
+                tools={tools}
+                toolName={balances.name}
+                needsPicker={balances.needsPicker}
+                onSelectTool={(name) => setToolFor("balances", name)}
+              />
+              <MarketCard
+                settings={settings}
+                tools={tools}
+                toolName={ticker.name}
+                needsPicker={ticker.needsPicker}
+                onSelectTool={(name) => setToolFor("ticker", name)}
+              />
+            </div>
+
+            <TradesCard
+              settings={settings}
+              tools={tools}
+              toolName={trades.name}
+              needsPicker={trades.needsPicker}
+              onSelectTool={(name) => setToolFor("trades", name)}
+            />
+
+            <ToolExplorer settings={settings} tools={tools} />
+          </>
+        ) : null}
       </div>
     </main>
   );
