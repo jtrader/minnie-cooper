@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Loader2, ShieldAlert, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Redo2, ShieldAlert, ShieldCheck, Trash2, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +52,7 @@ import {
   type ChartTimeframe,
 } from "@/lib/kraken/drafts";
 import type { BridgeSettings } from "@/lib/kraken/types";
+import { useDrawingHistory } from "@/lib/kraken/use-drawing-history";
 
 const HORIZONS = [
   { label: "1h", hours: 1 },
@@ -87,6 +88,15 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
 
   const refreshDraftPairs = useCallback(() => setDraftPairs(new Set(listDraftPairs())), []);
 
+  const applySnapshot = useCallback(
+    (snapshot: { points: CurvePoint[]; annotations: EllipseAnnotation[] }) => {
+      setPoints(snapshot.points);
+      setAnnotations(snapshot.annotations);
+    },
+    [],
+  );
+  const history = useDrawingHistory({ points, annotations }, applySnapshot);
+
   /** Highlight is set only by discrete interactions (click / mousedown), never on move. */
   const highlight = useCallback(
     (id: string | null) => {
@@ -108,6 +118,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
     setHours(restored.hours);
     setAnnotations(restored.annotations);
     setTimeframe(loadTimeframe());
+    history.reset({ points: restored.points, annotations: restored.annotations });
     setMarketsCollapsed(loadDrawerCollapsed("markets", restoredPair));
     setObjectsCollapsed(loadDrawerCollapsed("objects", restoredPair));
     setHighlightedId(loadHighlight(restoredPair));
@@ -145,12 +156,13 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       setPoints(restored.points);
       setHours(restored.hours);
       setAnnotations(restored.annotations);
+      history.reset({ points: restored.points, annotations: restored.annotations });
       setMarketsCollapsed(loadDrawerCollapsed("markets", next));
       setObjectsCollapsed(loadDrawerCollapsed("objects", next));
       setHighlightedId(loadHighlight(next));
       setPulseKey((k) => k + 1);
     },
-    [pair],
+    [pair, history],
   );
 
   // Debounced per-pair draft persistence.
@@ -287,6 +299,35 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
           <h2 className="text-sm font-semibold tracking-tight">Draw stop-loss curve</h2>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                history
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5"
+                onClick={history.undo}
+                disabled={!history.canUndo}
+                title="Undo (Ctrl/Cmd+Z)"
+                aria-label="Undo"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5"
+                onClick={history.redo}
+                disabled={!history.canRedo}
+                title="Redo (Ctrl/Cmd+Shift+Z)"
+                aria-label="Redo"
+              >
+                <Redo2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 tool
