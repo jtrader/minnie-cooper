@@ -19,6 +19,8 @@ import { BridgeErrorNotice } from "./bridge-error-notice";
 import { CurveEditor, type CurveTool } from "./curve-editor";
 import { TradingViewChart } from "./tradingview-chart";
 import { MarketsPanel } from "./markets-panel";
+import { ObjectsPanel } from "./objects-panel";
+import { SideDrawer } from "./side-drawer";
 import { callTool, extractPayload, listTools } from "@/lib/kraken/client";
 import { guessTool, pairArgs } from "@/lib/kraken/discovery";
 import { parseTicker } from "@/lib/kraken/parse";
@@ -38,9 +40,11 @@ import {
   clearDraft,
   listDraftPairs,
   loadDraft,
+  loadDrawerCollapsed,
   loadSelectedPair,
   loadTimeframe,
   saveDraft,
+  saveDrawerCollapsed,
   saveSelectedPair,
   saveTimeframe,
   type ChartTimeframe,
@@ -73,6 +77,9 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   const [startTime] = useState(() => Date.now());
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("15");
   const [draftPairs, setDraftPairs] = useState<Set<string>>(new Set());
+  const [marketsCollapsed, setMarketsCollapsed] = useState(false);
+  const [objectsCollapsed, setObjectsCollapsed] = useState(false);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const hydratedRef = useRef(false);
 
   const refreshDraftPairs = useCallback(() => setDraftPairs(new Set(listDraftPairs())), []);
@@ -86,10 +93,33 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
     setHours(restored.hours);
     setAnnotations(restored.annotations);
     setTimeframe(loadTimeframe());
+    setMarketsCollapsed(loadDrawerCollapsed("markets"));
+    setObjectsCollapsed(loadDrawerCollapsed("objects"));
     refreshDraftPairs();
     hydratedRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const toggleMarkets = useCallback(() => {
+    setMarketsCollapsed((prev) => {
+      saveDrawerCollapsed("markets", !prev);
+      return !prev;
+    });
+  }, []);
+
+  const toggleObjects = useCallback(() => {
+    setObjectsCollapsed((prev) => {
+      saveDrawerCollapsed("objects", !prev);
+      return !prev;
+    });
+  }, []);
+
+  // Highlights are transient: clear the glow shortly after selection.
+  useEffect(() => {
+    if (!highlightedId) return;
+    const timer = window.setTimeout(() => setHighlightedId(null), 2200);
+    return () => window.clearTimeout(timer);
+  }, [highlightedId]);
 
   const selectPair = useCallback(
     (next: string) => {
