@@ -28,6 +28,10 @@ export type CurveEditorProps = {
   onAnnotationsChange?: (annotations: EllipseAnnotation[]) => void;
   /** Id of the shape to highlight: "curve" for the drawn floor, or an annotation id. */
   highlightedId?: string | null;
+  /** Report a new highlight target from a discrete chart interaction. */
+  onHighlight?: (id: string | null) => void;
+  /** Bumped whenever the highlight target changes; retriggers the selection pulse. */
+  pulseKey?: number;
   className?: string;
 };
 
@@ -62,11 +66,14 @@ export function CurveEditor({
   annotations,
   onAnnotationsChange,
   highlightedId,
+  onHighlight,
+  pulseKey = 0,
   className,
 }: CurveEditorProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [drag, setDrag] = useState<{ from: CurvePoint; to: CurvePoint } | null>(null);
+  const [pendingShapeId, setPendingShapeId] = useState<string | null>(null);
   const shapes = annotations ?? [];
 
   const range = useMemo(
@@ -125,6 +132,7 @@ export function CurveEditor({
     if (tool !== "curve") return;
     const point = toDomain(event.clientX, event.clientY);
     if (!point) return;
+    onHighlight?.("curve");
     onChange([...points, point].sort((a, b) => a.t - b.t));
   };
 
@@ -133,12 +141,22 @@ export function CurveEditor({
     const point = toDomain(event.clientX, event.clientY);
     if (!point) return;
     setDrag({ from: point, to: point });
+    if (tool === "trendline") {
+      onHighlight?.("curve");
+      setPendingShapeId(null);
+    } else {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      setPendingShapeId(id);
+      onHighlight?.(id);
+    }
   };
 
   const finishDrag = () => {
     if (!drag) return;
     const { from, to } = drag;
     setDrag(null);
+    const shapeId = pendingShapeId;
+    setPendingShapeId(null);
     if (tool === "trendline") {
       if (from.t === to.t) return;
       onChange([from, to].sort((a, b) => a.t - b.t));
@@ -148,16 +166,18 @@ export function CurveEditor({
       const rt = Math.abs(to.t - from.t) / 2;
       const rprice = Math.abs(to.price - from.price) / 2;
       if (rt <= 0 || rprice <= 0) return;
+      const id = shapeId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       onAnnotationsChange?.([
         ...shapes,
         {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          id,
           ct: (from.t + to.t) / 2,
           cprice: (from.price + to.price) / 2,
           rt,
           rprice,
         },
       ]);
+      onHighlight?.(id);
     }
   };
 
