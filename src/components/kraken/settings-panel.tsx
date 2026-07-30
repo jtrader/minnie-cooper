@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BridgeErrorNotice } from "./bridge-error-notice";
-import { checkHealth } from "@/lib/kraken/client";
+import { checkHealth, listTools } from "@/lib/kraken/client";
+import { BridgeError } from "@/lib/kraken/types";
 import { DEFAULT_BASE_URL } from "@/lib/kraken/settings";
 import type { BridgeSettings } from "@/lib/kraken/types";
 
@@ -59,19 +60,35 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
       ].join("\n")
     : "";
 
+  const [toolCount, setToolCount] = useState<number | null>(null);
+  const [failedStage, setFailedStage] = useState<"health" | "auth" | null>(null);
+
   const runTest = async () => {
     setTesting(true);
     setError(null);
     setHealth(null);
+    setToolCount(null);
+    setFailedStage(null);
+    const target = { baseUrl: baseUrl.trim(), token: token.trim() };
     try {
-      const status = await checkHealth({ baseUrl, token });
-      setHealth(status);
+      setHealth(await checkHealth(target));
     } catch (err) {
+      setFailedStage("health");
+      setError(err);
+      setTesting(false);
+      return;
+    }
+    try {
+      setToolCount((await listTools(target)).length);
+    } catch (err) {
+      setFailedStage("auth");
       setError(err);
     } finally {
       setTesting(false);
     }
   };
+
+  const failureKind = error instanceof BridgeError ? error.kind : error ? "http" : null;
 
   return (
     <div className="space-y-4">
@@ -139,11 +156,60 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
         </div>
       ) : null}
 
-      {error ? <BridgeErrorNotice error={error} /> : null}
-      {health ? (
-        <div className="flex items-center gap-2 rounded-md border border-gain/40 bg-gain/10 px-3 py-2 text-xs text-gain">
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          <span className="font-mono">/healthz status: {health}</span>
+      {error ? (
+        <div className="space-y-2">
+          <BridgeErrorNotice error={error} />
+          <div className="rounded-md border border-border bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
+            {failureKind === "network" ? (
+              <p>
+                The bridge did not answer at <span className="font-mono">{baseUrl}</span>. It is
+                either not running, listening on a different port, or unreachable from this browser
+                (a page served over https cannot call an http localhost bridge). Start the bridge,
+                confirm the port, and retry.
+              </p>
+            ) : failureKind === "unauthorized" ? (
+              <p>
+                The bridge is running and answered{" "}
+                <span className="font-mono">/healthz</span>, but rejected the bearer token on the
+                authenticated <span className="font-mono">/tools</span> call. The token here does
+                not match <span className="font-mono">KRAKEN_BRIDGE_TOKEN</span> in the bridge
+                process — restarting the bridge mints a new one. Generate a token above, launch the
+                bridge with the printed command, then retry.
+              </p>
+            ) : (
+              <p>
+                The {failedStage === "auth" ? "authenticated /tools" : "/healthz"} request failed
+                with an unexpected response. Check the bridge logs and retry.
+              </p>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={runTest}
+              disabled={testing || !baseUrl.trim()}
+            >
+              {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+              Retry test
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {!error && health ? (
+        <div className="space-y-1 rounded-md border border-gain/40 bg-gain/10 px-3 py-2 text-xs text-gain">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            <span className="font-mono">/healthz status: {health}</span>
+          </div>
+          {toolCount !== null ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span className="font-mono">
+                /tools authorised · {toolCount} tool{toolCount === 1 ? "" : "s"}
+              </span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
