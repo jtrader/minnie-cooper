@@ -51,6 +51,14 @@ function num(value: unknown): number | null {
   return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : null;
 }
 
+let lastNonce = 0;
+
+function nextNonce(): string {
+  const now = Date.now();
+  lastNonce = now > lastNonce ? now : lastNonce + 1;
+  return String(lastNonce);
+}
+
 function signature(path: string, nonce: string, body: string, secret: string): string {
   const hash = createHash("sha256")
     .update(nonce + body)
@@ -92,7 +100,7 @@ export async function krakenPrivate(
 ): Promise<Record<string, unknown>> {
   const { key, secret } = credentials();
   const path = `/0/private/${endpoint}`;
-  const nonce = Date.now().toString();
+  const nonce = nextNonce();
   const body = new URLSearchParams({ nonce, ...params }).toString();
 
   let response: Response;
