@@ -121,23 +121,47 @@ export function saveSelectedPair(pair: string): void {
 }
 
 const DRAWER_KEY_PREFIX = "stoploss-drawer:";
+const HIGHLIGHT_KEY_PREFIX = "stoploss-highlight:";
 
 export type DrawerSide = "markets" | "objects";
 
-/** Collapsed state for a side drawer. Global (not per-pair), like the timeframe. */
-export function loadDrawerCollapsed(side: DrawerSide): boolean {
+const drawerKey = (side: DrawerSide, pair: string) => `${DRAWER_KEY_PREFIX}${side}:${pair}`;
+
+/** Collapsed state for a side drawer, persisted per trading pair. */
+export function loadDrawerCollapsed(side: DrawerSide, pair: string): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem(`${DRAWER_KEY_PREFIX}${side}`) === "collapsed";
+    return window.localStorage.getItem(drawerKey(side, pair)) === "collapsed";
   } catch {
     return false;
   }
 }
 
-export function saveDrawerCollapsed(side: DrawerSide, collapsed: boolean): void {
+export function saveDrawerCollapsed(side: DrawerSide, pair: string, collapsed: boolean): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(`${DRAWER_KEY_PREFIX}${side}`, collapsed ? "collapsed" : "open");
+    window.localStorage.setItem(drawerKey(side, pair), collapsed ? "collapsed" : "open");
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/** Currently highlighted object id ("curve" or an annotation id), persisted per pair. */
+export function loadHighlight(pair: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(`${HIGHLIGHT_KEY_PREFIX}${pair}`);
+  } catch {
+    return null;
+  }
+}
+
+export function saveHighlight(pair: string, id: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    const key = `${HIGHLIGHT_KEY_PREFIX}${pair}`;
+    if (id === null) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, id);
   } catch {
     /* storage unavailable */
   }
