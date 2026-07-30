@@ -15,13 +15,21 @@ function randomToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function CopyButton({ value, label }: { value: string; label: string }) {
+function CopyButton({
+  value,
+  label,
+  text,
+}: {
+  value: string;
+  label: string;
+  text?: string;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
       aria-label={label}
-      className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+      className="inline-flex shrink-0 items-center gap-1.5 rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(value);
@@ -33,6 +41,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
       }}
     >
       {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      {text ? <span>{copied ? "Copied" : text}</span> : null}
     </button>
   );
 }
@@ -63,13 +72,16 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
   const [toolCount, setToolCount] = useState<number | null>(null);
   const [failedStage, setFailedStage] = useState<"health" | "auth" | null>(null);
 
-  const runTest = async () => {
+  const runTest = async (overrides?: Partial<BridgeSettings>) => {
     setTesting(true);
     setError(null);
     setHealth(null);
     setToolCount(null);
     setFailedStage(null);
-    const target = { baseUrl: baseUrl.trim(), token: token.trim() };
+    const target = {
+      baseUrl: (overrides?.baseUrl ?? baseUrl).trim(),
+      token: (overrides?.token ?? token).trim(),
+    };
     try {
       setHealth(await checkHealth(target));
     } catch (err) {
