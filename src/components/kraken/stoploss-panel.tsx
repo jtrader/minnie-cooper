@@ -247,12 +247,21 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[220px_1fr]">
+    <div
+      className="grid gap-3"
+      style={{
+        gridTemplateColumns: `${marketsCollapsed ? "44px" : "220px"} minmax(0,1fr) ${
+          objectsCollapsed ? "44px" : "220px"
+        }`,
+      }}
+    >
       <MarketsPanel
         pair={pair}
         onSelect={selectPair}
         activePlanPairs={activePlanPairs}
         draftPairs={draftPairs}
+        collapsed={marketsCollapsed}
+        onToggleCollapsed={toggleMarkets}
       />
       <div className="min-w-0 space-y-3">
       <section className="rounded-lg border border-border bg-card">
@@ -336,6 +345,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
                 tool={tool}
                 annotations={annotations}
                 onAnnotationsChange={setAnnotations}
+                highlightedId={highlightedId}
                 overlayLabel={
                   activePlan
                     ? `Active plan · floor ${formatNumber(
