@@ -142,6 +142,7 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
               setGenerated(next);
               setHealth(null);
               setError(null);
+              void runTest({ token: next });
             }}
           >
             <Sparkles className="h-3.5 w-3.5" />
@@ -163,8 +164,18 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
             <pre className="min-w-0 flex-1 overflow-x-auto whitespace-pre font-mono text-[11px] leading-relaxed text-foreground">
               {launchCommand}
             </pre>
-            <CopyButton value={launchCommand} label="Copy bridge launch command" />
+            <CopyButton
+              value={launchCommand}
+              label="Copy bridge launch command"
+              text="Copy command"
+            />
           </div>
+          {testing ? (
+            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Testing the bridge with the new token…
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -198,7 +209,7 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
               variant="outline"
               size="sm"
               className="mt-2"
-              onClick={runTest}
+              onClick={() => void runTest()}
               disabled={testing || !baseUrl.trim()}
             >
               {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
@@ -226,7 +237,12 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={runTest} disabled={testing || !baseUrl}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void runTest()}
+          disabled={testing || !baseUrl}
+        >
           {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
           Test connection
         </Button>
