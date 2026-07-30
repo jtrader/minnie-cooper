@@ -113,7 +113,7 @@ export function TradesCard({
           <p className="text-xs text-muted-foreground">No trades or orders returned.</p>
         ) : (
           <div className="max-h-80 overflow-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-xs [&_td]:px-2 [&_th]:px-2">
               <thead className="sticky top-0 bg-card">
                 <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                   {COLUMNS.map((column) => (
