@@ -44,10 +44,10 @@ export const fetchKrakenTicker = createServerFn({ method: "GET" })
 
 export const fetchKrakenActivity = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const [tradesResult, ordersResult] = await Promise.all([
-      krakenPrivate("TradesHistory"),
-      krakenPrivate("OpenOrders"),
-    ]);
+    // Sequential: Kraken requires strictly increasing nonces per key,
+    // and parallel requests can arrive out of order.
+    const tradesResult = await krakenPrivate("TradesHistory");
+    const ordersResult = await krakenPrivate("OpenOrders");
     return {
       rows: [...mapOrders(ordersResult), ...mapTrades(tradesResult)].slice(0, 100),
       error: null,
