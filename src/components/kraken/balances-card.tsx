@@ -26,6 +26,7 @@ export function BalancesCard({
   const query = useQuery({
     queryKey: ["balances", settings.baseUrl, toolName],
     enabled: Boolean(toolName),
+    retry: false,
     queryFn: async () => extractPayload(await callTool(settings, toolName as string)),
   });
 

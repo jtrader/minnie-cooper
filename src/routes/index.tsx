@@ -49,6 +49,7 @@ function Dashboard() {
   const toolsQuery = useQuery({
     queryKey: ["tools", settings.baseUrl, settings.token],
     enabled: configured,
+    retry: false,
     queryFn: () => listTools(settings),
   });
 

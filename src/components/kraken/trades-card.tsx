@@ -41,6 +41,7 @@ export function TradesCard({
   const query = useQuery({
     queryKey: ["trades", settings.baseUrl, toolName],
     enabled: Boolean(toolName),
+    retry: false,
     queryFn: async () => extractPayload(await callTool(settings, toolName as string)),
   });
 

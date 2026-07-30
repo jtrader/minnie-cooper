@@ -37,6 +37,7 @@ export function MarketCard({
   const query = useQuery({
     queryKey: ["ticker", settings.baseUrl, toolName, pair],
     enabled: Boolean(toolName),
+    retry: false,
     refetchInterval: live ? 10_000 : false,
     queryFn: async () => extractPayload(await callTool(settings, toolName as string, pairArgs(tool, pair))),
   });
