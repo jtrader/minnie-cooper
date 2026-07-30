@@ -84,3 +84,19 @@ export function saveTimeframe(value: ChartTimeframe): void {
     /* storage unavailable */
   }
 }
+
+const SELECTED_PAIR_KEY = "stoploss-selected-pair";
+
+export function loadSelectedPair(fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  return window.localStorage.getItem(SELECTED_PAIR_KEY) || fallback;
+}
+
+export function saveSelectedPair(pair: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SELECTED_PAIR_KEY, pair);
+  } catch {
+    /* storage unavailable */
+  }
+}
