@@ -20,6 +20,13 @@ import { CurveEditor, type CurveTool } from "./curve-editor";
 import { TradingViewChart } from "./tradingview-chart";
 import { MarketsPanel } from "./markets-panel";
 import { ObjectsPanel } from "./objects-panel";
+import { HistoryContextMenu } from "./history-context-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SideDrawer } from "./side-drawer";
 import { callTool, extractPayload, listTools } from "@/lib/kraken/client";
 import { guessTool, pairArgs } from "@/lib/kraken/discovery";
@@ -95,7 +102,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
     },
     [],
   );
-  const history = useDrawingHistory({ points, annotations }, applySnapshot);
+  const history = useDrawingHistory(pair, { points, annotations }, applySnapshot);
 
   /** Highlight is set only by discrete interactions (click / mousedown), never on move. */
   const highlight = useCallback(
@@ -156,7 +163,6 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       setPoints(restored.points);
       setHours(restored.hours);
       setAnnotations(restored.annotations);
-      history.reset({ points: restored.points, annotations: restored.annotations });
       setMarketsCollapsed(loadDrawerCollapsed("markets", next));
       setObjectsCollapsed(loadDrawerCollapsed("objects", next));
       setHighlightedId(loadHighlight(next));
@@ -303,30 +309,50 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 history
               </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 px-1.5"
-                onClick={history.undo}
-                disabled={!history.canUndo}
-                title="Undo (Ctrl/Cmd+Z)"
-                aria-label="Undo"
-              >
-                <Undo2 className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 px-1.5"
-                onClick={history.redo}
-                disabled={!history.canRedo}
-                title="Redo (Ctrl/Cmd+Shift+Z)"
-                aria-label="Redo"
-              >
-                <Redo2 className="h-3.5 w-3.5" />
-              </Button>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-1.5"
+                        onClick={history.undo}
+                        disabled={!history.canUndo}
+                        aria-label="Undo"
+                      >
+                        <Undo2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {history.canUndo ? "Undo point/curve edit (Ctrl/Cmd+Z)" : "Nothing to undo"}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-1.5"
+                        onClick={history.redo}
+                        disabled={!history.canRedo}
+                        aria-label="Redo"
+                      >
+                        <Redo2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {history.canRedo
+                      ? "Redo point/curve edit (Ctrl/Cmd+Shift+Z)"
+                      : "Nothing to redo"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -395,6 +421,13 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
               <TradingViewChart symbol={pair} interval={timeframe} />
             </div>
             <div className="relative">
+              <HistoryContextMenu
+                canUndo={history.canUndo}
+                canRedo={history.canRedo}
+                onUndo={history.undo}
+                onRedo={history.redo}
+                className="block"
+              >
               <CurveEditor
                 points={points}
                 onChange={setPoints}
@@ -417,6 +450,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
                     : undefined
                 }
               />
+              </HistoryContextMenu>
             </div>
           </div>
 
@@ -553,6 +587,13 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
         collapsed={objectsCollapsed}
         onToggle={toggleObjects}
       >
+        <HistoryContextMenu
+          canUndo={history.canUndo}
+          canRedo={history.canRedo}
+          onUndo={history.undo}
+          onRedo={history.redo}
+          className="block"
+        >
         <ObjectsPanel
           points={sorted}
           annotations={annotations}
@@ -563,6 +604,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
             setAnnotations((prev) => prev.filter((shape) => shape.id !== id))
           }
         />
+        </HistoryContextMenu>
       </SideDrawer>
     </div>
   );

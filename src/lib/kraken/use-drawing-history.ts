@@ -6,6 +6,8 @@ export type DrawingSnapshot = {
   annotations: EllipseAnnotation[];
 };
 
+type Stack = { past: DrawingSnapshot[]; future: DrawingSnapshot[] };
+
 const LIMIT = 60;
 /** Continuous gestures (point drags, shape drags) settle within this window. */
 const COMMIT_DELAY = 300;
@@ -24,61 +26,84 @@ const clone = (snapshot: DrawingSnapshot): DrawingSnapshot => ({
 /**
  * Undo/redo for the drawing surface (curve point drags, trendline edits,
  * ellipse creation/deletion). Changes are coalesced so one drag gesture is a
- * single history entry rather than one per pointer move.
+ * single history entry rather than one per pointer move. History stacks are
+ * kept per trading pair for the browser session, so switching away and back
+ * preserves that pair's undo history.
  */
 export function useDrawingHistory(
+  pair: string,
   snapshot: DrawingSnapshot,
   apply: (snapshot: DrawingSnapshot) => void,
 ) {
-  const pastRef = useRef<DrawingSnapshot[]>([]);
-  const futureRef = useRef<DrawingSnapshot[]>([]);
-  const currentRef = useRef<DrawingSnapshot>(clone(snapshot));
+  const stacksRef = useRef<Map<string, Stack>>(new Map());
+  const currentRef = useRef<Map<string, DrawingSnapshot>>(new Map());
   const [, bump] = useState(0);
   const rerender = useCallback(() => bump((n) => n + 1), []);
 
+  const stackFor = useCallback((p: string): Stack => {
+    let stack = stacksRef.current.get(p);
+    if (!stack) {
+      stack = { past: [], future: [] };
+      stacksRef.current.set(p, stack);
+    }
+    return stack;
+  }, []);
+
+  // Rebase the current baseline whenever the active pair changes; never treat
+  // a pair switch as an edit.
+  const pairRef = useRef(pair);
+  if (pairRef.current !== pair) {
+    pairRef.current = pair;
+    currentRef.current.set(pair, clone(snapshot));
+    stackFor(pair);
+  }
+  if (!currentRef.current.has(pair)) currentRef.current.set(pair, clone(snapshot));
+
   const snapshotKey = key(snapshot);
-  const currentKey = key(currentRef.current);
+  const currentKey = key(currentRef.current.get(pair)!);
 
   useEffect(() => {
     if (snapshotKey === currentKey) return;
     const timer = window.setTimeout(() => {
-      pastRef.current = [...pastRef.current, currentRef.current].slice(-LIMIT);
-      futureRef.current = [];
-      currentRef.current = clone(snapshot);
+      const stack = stackFor(pair);
+      stack.past = [...stack.past, currentRef.current.get(pair)!].slice(-LIMIT);
+      stack.future = [];
+      currentRef.current.set(pair, clone(snapshot));
       rerender();
     }, COMMIT_DELAY);
     return () => window.clearTimeout(timer);
-  }, [snapshotKey, currentKey, snapshot, rerender]);
+  }, [snapshotKey, currentKey, snapshot, pair, stackFor, rerender]);
 
   const undo = useCallback(() => {
-    const prev = pastRef.current[pastRef.current.length - 1];
+    const stack = stackFor(pair);
+    const prev = stack.past[stack.past.length - 1];
     if (!prev) return;
-    pastRef.current = pastRef.current.slice(0, -1);
-    futureRef.current = [...futureRef.current, currentRef.current];
-    currentRef.current = prev;
+    stack.past = stack.past.slice(0, -1);
+    stack.future = [...stack.future, currentRef.current.get(pair)!];
+    currentRef.current.set(pair, prev);
     apply(clone(prev));
     rerender();
-  }, [apply, rerender]);
+  }, [apply, pair, stackFor, rerender]);
 
   const redo = useCallback(() => {
-    const next = futureRef.current[futureRef.current.length - 1];
+    const stack = stackFor(pair);
+    const next = stack.future[stack.future.length - 1];
     if (!next) return;
-    futureRef.current = futureRef.current.slice(0, -1);
-    pastRef.current = [...pastRef.current, currentRef.current];
-    currentRef.current = next;
+    stack.future = stack.future.slice(0, -1);
+    stack.past = [...stack.past, currentRef.current.get(pair)!];
+    currentRef.current.set(pair, next);
     apply(clone(next));
     rerender();
-  }, [apply, rerender]);
+  }, [apply, pair, stackFor, rerender]);
 
-  /** Drop history and rebase on a new baseline (e.g. after switching pair). */
+  /** Drop this pair's history and rebase on a new baseline. */
   const reset = useCallback(
     (base: DrawingSnapshot) => {
-      pastRef.current = [];
-      futureRef.current = [];
-      currentRef.current = clone(base);
+      stacksRef.current.set(pair, { past: [], future: [] });
+      currentRef.current.set(pair, clone(base));
       rerender();
     },
-    [rerender],
+    [pair, rerender],
   );
 
   useEffect(() => {
@@ -99,11 +124,12 @@ export function useDrawingHistory(
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo]);
 
+  const stack = stackFor(pair);
   return {
     undo,
     redo,
     reset,
-    canUndo: pastRef.current.length > 0,
-    canRedo: futureRef.current.length > 0,
+    canUndo: stack.past.length > 0,
+    canRedo: stack.future.length > 0,
   };
 }
