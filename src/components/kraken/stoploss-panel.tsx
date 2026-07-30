@@ -484,6 +484,24 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
         </AlertDialogContent>
       </AlertDialog>
       </div>
+
+      <SideDrawer
+        title="Objects"
+        side="right"
+        collapsed={objectsCollapsed}
+        onToggle={toggleObjects}
+      >
+        <ObjectsPanel
+          points={sorted}
+          annotations={annotations}
+          highlightedId={highlightedId}
+          onHighlight={setHighlightedId}
+          onClearCurve={() => setPoints([])}
+          onDeleteAnnotation={(id) =>
+            setAnnotations((prev) => prev.filter((shape) => shape.id !== id))
+          }
+        />
+      </SideDrawer>
     </div>
   );
 }
