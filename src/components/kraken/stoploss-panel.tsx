@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { BridgeErrorNotice } from "./bridge-error-notice";
-import { CurveEditor } from "./curve-editor";
+import { CurveEditor, type CurveTool } from "./curve-editor";
 import { TradingViewChart } from "./tradingview-chart";
 import { MarketsPanel } from "./markets-panel";
 import { callTool, extractPayload, listTools } from "@/lib/kraken/client";
@@ -28,6 +28,7 @@ import {
   curvePriceAt,
   listStopLossPlans,
   type CurvePoint,
+  type EllipseAnnotation,
   type StopLossPlan,
 } from "@/lib/kraken/stoploss";
 import { formatNumber, formatTime } from "@/lib/kraken/format";
@@ -53,6 +54,12 @@ const HORIZONS = [
   { label: "7d", hours: 168 },
 ];
 
+const TOOLS: { label: string; value: CurveTool }[] = [
+  { label: "Curve", value: "curve" },
+  { label: "Trendline", value: "trendline" },
+  { label: "Ellipse", value: "ellipse" },
+];
+
 export function StopLossPanel({ settings, configured }: { settings: BridgeSettings; configured: boolean }) {
   const queryClient = useQueryClient();
   const [pair, setPair] = useState("XBTUSD");
@@ -60,6 +67,8 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   const [volume, setVolume] = useState("");
   const [armed, setArmed] = useState(false);
   const [points, setPoints] = useState<CurvePoint[]>([]);
+  const [annotations, setAnnotations] = useState<EllipseAnnotation[]>([]);
+  const [tool, setTool] = useState<CurveTool>("curve");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [startTime] = useState(() => Date.now());
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("15");
@@ -75,6 +84,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
     setPair(restoredPair);
     setPoints(restored.points);
     setHours(restored.hours);
+    setAnnotations(restored.annotations);
     setTimeframe(loadTimeframe());
     refreshDraftPairs();
     hydratedRef.current = true;
@@ -89,6 +99,7 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       saveSelectedPair(next);
       setPoints(restored.points);
       setHours(restored.hours);
+      setAnnotations(restored.annotations);
     },
     [pair],
   );
@@ -97,11 +108,11 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   useEffect(() => {
     if (!hydratedRef.current) return;
     const timer = window.setTimeout(() => {
-      saveDraft(pair, { points, hours });
+      saveDraft(pair, { points, hours, annotations });
       refreshDraftPairs();
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [pair, points, hours, refreshDraftPairs]);
+  }, [pair, points, hours, annotations, refreshDraftPairs]);
 
   const pickTimeframe = (value: ChartTimeframe) => {
     setTimeframe(value);
@@ -145,7 +156,11 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
       }),
     onSuccess: () => {
       setPoints([]);
-      clearDraft(pair);
+      if (annotations.length > 0) {
+        saveDraft(pair, { points: [], hours, annotations });
+      } else {
+        clearDraft(pair);
+      }
       refreshDraftPairs();
       void queryClient.invalidateQueries({ queryKey: ["stoploss"] });
     },
@@ -209,6 +224,26 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                tool
+              </span>
+              {TOOLS.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  aria-pressed={tool === item.value}
+                  onClick={() => setTool(item.value)}
+                  className={`rounded px-1.5 py-0.5 text-[11px] transition-colors ${
+                    tool === item.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 candles
               </span>
               {TIMEFRAMES.map((tf) => (
@@ -261,6 +296,9 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
                 endTime={domainEnd}
                 marketPrice={marketPrice}
                 overlayPoints={overlayPoints}
+                tool={tool}
+                annotations={annotations}
+                onAnnotationsChange={setAnnotations}
                 overlayLabel={
                   activePlan
                     ? `Active plan · floor ${formatNumber(
