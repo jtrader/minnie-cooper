@@ -189,7 +189,14 @@ export function StopLossPanel({ settings, configured }: { settings: BridgeSettin
   );
 
   // Always widen the visible domain so restored points are never clipped out of view.
-  const domainPoints = [...sorted, ...overlayPoints];
+  const domainPoints = [
+    ...sorted,
+    ...overlayPoints,
+    ...annotations.flatMap((a) => [
+      { t: a.ct - a.rt, price: a.cprice },
+      { t: a.ct + a.rt, price: a.cprice },
+    ]),
+  ];
   const domainStart = domainPoints.reduce((min, p) => Math.min(min, p.t), startTime);
   const domainEnd = domainPoints.reduce((max, p) => Math.max(max, p.t), endTime);
 
