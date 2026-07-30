@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { Check, CheckCircle2, Copy, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,34 @@ import { BridgeErrorNotice } from "./bridge-error-notice";
 import { checkHealth } from "@/lib/kraken/client";
 import { DEFAULT_BASE_URL } from "@/lib/kraken/settings";
 import type { BridgeSettings } from "@/lib/kraken/types";
+
+function randomToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function CopyButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1500);
+        } catch {
+          setCopied(false);
+        }
+      }}
+    >
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
 
 type SettingsPanelProps = {
   settings: BridgeSettings;
@@ -20,6 +48,16 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
   const [testing, setTesting] = useState(false);
   const [health, setHealth] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const [generated, setGenerated] = useState<string | null>(null);
+
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  const launchCommand = generated
+    ? [
+        `KRAKEN_BRIDGE_TOKEN=${generated} \\`,
+        `KRAKEN_BRIDGE_ALLOWED_ORIGIN=${origin} \\`,
+        `  npm run kraken-bridge`,
+      ].join("\n")
+    : "";
 
   const runTest = async () => {
     setTesting(true);
@@ -55,19 +93,51 @@ export function SettingsPanel({ settings, onSave, onDone }: SettingsPanelProps) 
         <Label htmlFor="token" className="text-xs uppercase tracking-wide text-muted-foreground">
           Bearer token
         </Label>
-        <Input
-          id="token"
-          type="password"
-          value={token}
-          onChange={(event) => setToken(event.target.value)}
-          placeholder="paste kraken-bridge token"
-          className="font-mono text-sm"
-          autoComplete="off"
-        />
+        <div className="flex gap-2">
+          <Input
+            id="token"
+            type={generated ? "text" : "password"}
+            value={token}
+            onChange={(event) => setToken(event.target.value)}
+            placeholder="paste kraken-bridge token"
+            className="font-mono text-sm"
+            autoComplete="off"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={() => {
+              const next = randomToken();
+              setToken(next);
+              setGenerated(next);
+              setHealth(null);
+              setError(null);
+            }}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Generate
+          </Button>
+        </div>
         <p className="text-[11px] text-muted-foreground">
           Stored in this browser&apos;s localStorage only, and sent only to the bridge URL above.
         </p>
       </div>
+
+      {generated ? (
+        <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3">
+          <p className="text-[11px] text-muted-foreground">
+            New token generated in this browser. Save it here, then start the bridge with the exact
+            command below so both sides share the same token.
+          </p>
+          <div className="flex items-start gap-2">
+            <pre className="min-w-0 flex-1 overflow-x-auto whitespace-pre font-mono text-[11px] leading-relaxed text-foreground">
+              {launchCommand}
+            </pre>
+            <CopyButton value={launchCommand} label="Copy bridge launch command" />
+          </div>
+        </div>
+      ) : null}
 
       {error ? <BridgeErrorNotice error={error} /> : null}
       {health ? (
