@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { SettingsPanel } from "@/components/kraken/settings-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BalancesCard } from "@/components/kraken/balances-card";
 import { MarketCard } from "@/components/kraken/market-card";
 import { TradesCard } from "@/components/kraken/trades-card";
@@ -25,6 +26,9 @@ import { KrakenAccountButton } from "@/components/kraken/kraken-account-button";
 import { KrakenConnectionProvider } from "@/components/kraken/kraken-connection";
 import { useKrakenConnection } from "@/components/kraken/kraken-connection";
 import { ConnectPrompt } from "@/components/kraken/connect-prompt";
+import { IbkrConnectionProvider } from "@/components/ibkr/ibkr-connection";
+import { IbkrAccountButton } from "@/components/ibkr/ibkr-account-button";
+import { IbkrPanel } from "@/components/ibkr/ibkr-panel";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
@@ -54,7 +58,9 @@ function DashboardRoute() {
   return (
     <AuthGate>
       <KrakenConnectionProvider>
-        <Dashboard />
+        <IbkrConnectionProvider>
+          <Dashboard />
+        </IbkrConnectionProvider>
       </KrakenConnectionProvider>
     </AuthGate>
   );
@@ -113,6 +119,7 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
           <KrakenAccountButton />
+          <IbkrAccountButton />
           <Link
             to="/stop-loss"
             className="inline-flex items-center gap-1.5 rounded-md border border-input px-2.5 py-1.5 text-xs font-medium hover:bg-accent"
@@ -144,6 +151,13 @@ function Dashboard() {
           </div>
         </header>
 
+        <Tabs defaultValue="kraken" className="space-y-3">
+          <TabsList className="h-8">
+            <TabsTrigger value="kraken" className="text-xs">Kraken</TabsTrigger>
+            <TabsTrigger value="ibkr" className="text-xs">Interactive Brokers</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="kraken" className="space-y-3">
         {configured || connected ? (
           <>
             {configured && toolsQuery.error ? <BridgeErrorNotice error={toolsQuery.error} /> : null}
@@ -181,6 +195,12 @@ function Dashboard() {
         ) : (
           <ConnectPrompt note="No data source yet — connect your Kraken account, or configure the local bridge in Settings." />
         )}
+          </TabsContent>
+
+          <TabsContent value="ibkr">
+            <IbkrPanel />
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );
