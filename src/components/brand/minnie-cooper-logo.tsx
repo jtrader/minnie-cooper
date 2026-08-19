@@ -10,28 +10,27 @@ type CollieHeadProps = {
  */
 function CollieHead({ className, title }: CollieHeadProps) {
   return (
-    <svg viewBox="0 0 48 40" fill="none" className={className} role="img" aria-label={title}>
+    <svg viewBox="0 0 100 100" fill="none" className={className} role="img" aria-label={title}>
       {title ? <title>{title}</title> : null}
       <path
-        d="M6 39C4 30 4 20 9.5 13L7 2.5L16.5 9C21.5 6 27.5 6.5 32 10.5L46.5 19L31 24C28 31 22 36 15 39.5Z"
+        d="M30 6 L52 30 C63 33 69 39 71 45 L92 48 L90 61 L69 63 C65 72 57 78 47 81 L36 96 L14 96 C10 74 12 44 24 30 Z"
         fill="currentColor"
       />
       <path
-        d="M14.5 10.5C18.5 15 22 21 24 28.5L18.5 29.5C16.5 22 13.5 16.5 10.5 12.5Z"
+        d="M55 29 C63 38 67 48 68 60 L58 61 C57 50 53 40 47 33 Z"
         className="fill-background"
       />
-      <path d="M12 39.5C11 34 12.5 29 16 25.5L21 27.5C18 31.5 16 35 15.5 39.5Z" className="fill-background" />
-      <circle cx="20.5" cy="16.5" r="1.6" className="fill-background" />
+      <circle cx="49" cy="43" r="3" className="fill-background" />
     </svg>
   );
 }
 
 /** Icon-only mark: Cooper (larger, chestnut) behind Minnie (smaller, ink). */
-export function MinnieCooperMark({ className = "h-9 w-11" }: { className?: string }) {
+export function MinnieCooperMark({ className = "h-10 w-12" }: { className?: string }) {
   return (
     <span className={`relative inline-block shrink-0 ${className}`} aria-hidden="true">
-      <CollieHead className="absolute right-0 top-0 h-full w-[78%] text-cooper" />
-      <CollieHead className="absolute bottom-0 left-0 h-[76%] w-[62%] text-minnie" />
+      <CollieHead className="absolute right-0 top-0 h-full w-[80%] text-cooper" />
+      <CollieHead className="absolute bottom-0 left-0 h-[72%] w-[58%] text-minnie" />
     </span>
   );
 }
