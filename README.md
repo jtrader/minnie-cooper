@@ -1,4 +1,4 @@
-# Optimal Risk Management
+# Minnie Cooper — Money Keeper Risk Management
 
 This project was built with [Lovable](https://lovable.dev).
 
