@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { LogIn, ShieldX, Loader2 } from "lucide-react";
+import { LogIn, ShieldX, Loader2, UserPlus } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -28,6 +28,23 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GateState>("checking");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+
+  const startGoogle = async (intent: "sign-in" | "sign-up") => {
+    setBusy(true);
+    setError(null);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+      extraParams: { prompt: intent === "sign-up" ? "consent select_account" : "select_account" },
+    });
+    if ("error" in result && result.error) {
+      setError(result.error.message ?? "Google authentication failed.");
+      setBusy(false);
+      return;
+    }
+    if ("redirected" in result && result.redirected) return;
+    setBusy(false);
+  };
 
   useEffect(() => {
     let active = true;
@@ -84,10 +101,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
         <ShieldX className="mx-auto h-8 w-8 text-destructive" />
         <h1 className="mt-4 text-lg font-semibold text-foreground">Access denied</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This app is restricted to a single account. You've been signed out.
+          Your Google account isn't approved for this dashboard, so you've been signed out.
+          Access is granted to approved accounts only — contact {ALLOWED_EMAIL} to request access.
         </p>
         <Button className="mt-6 w-full" variant="outline" onClick={() => setState("signed-out")}>
-          Back to sign in
+          Back
         </Button>
       </Shell>
     );
@@ -95,30 +113,42 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   return (
     <Shell>
-      <h1 className="text-lg font-semibold text-foreground">Sign in</h1>
+      <div className="mb-6 grid grid-cols-2 gap-1 rounded-md border border-border bg-muted/40 p-1">
+        {(["sign-in", "sign-up"] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => {
+              setMode(value);
+              setError(null);
+            }}
+            className={`rounded-sm px-3 py-1.5 text-xs font-medium transition-colors ${
+              mode === value
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {value === "sign-in" ? "Sign in" : "Sign up"}
+          </button>
+        ))}
+      </div>
+      <h1 className="text-lg font-semibold text-foreground">
+        {mode === "sign-in" ? "Sign in" : "Create your account"}
+      </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        This dashboard is private. Sign in with the authorised Google account to continue.
+        {mode === "sign-in"
+          ? "This dashboard is private. Sign in with the authorised Google account to continue."
+          : "Sign up with Google to create your account. Access is limited to approved accounts — if yours isn't approved yet, you'll be signed out and can request access."}
       </p>
-      <Button
-        className="mt-6 w-full"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setError(null);
-          const result = await lovable.auth.signInWithOAuth("google", {
-            redirect_uri: window.location.origin,
-          });
-          if ("error" in result && result.error) {
-            setError(result.error.message ?? "Sign-in failed.");
-            setBusy(false);
-            return;
-          }
-          if ("redirected" in result && result.redirected) return;
-          setBusy(false);
-        }}
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-        Sign in with Google
+      <Button className="mt-6 w-full" disabled={busy} onClick={() => void startGoogle(mode)}>
+        {busy ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : mode === "sign-in" ? (
+          <LogIn className="h-4 w-4" />
+        ) : (
+          <UserPlus className="h-4 w-4" />
+        )}
+        {mode === "sign-in" ? "Sign in with Google" : "Sign up with Google"}
       </Button>
       {error ? <p className="mt-3 text-xs text-destructive">{error}</p> : null}
     </Shell>
