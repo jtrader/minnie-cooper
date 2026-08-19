@@ -44,7 +44,7 @@ export function HerdingCurves() {
           viewBox={`0 0 ${W} ${H}`}
           className="h-auto w-full"
           role="img"
-          aria-label="Diagram: a rising, choppy market path that peaks and reverses. A short tight black curve (Minnie) rises steeply and meets price at the mid-trend pullback for an early exit. A longer, wider orange curve (Cooper) sweeps beneath the whole advance and meets price just after the peak for a later, larger exit."
+          aria-label="Diagram: a rising, choppy market path that peaks and reverses. A green dot marks the shared Minnie and Cooper entry just above the lowest V of the tape. A short tight black curve (Minnie) rises steeply and meets price at the mid-trend pullback for an early exit. A longer, wider orange curve (Cooper) sweeps beneath the whole advance and meets price just after the peak for a later, larger exit."
         >
           <defs>
             <linearGradient id="hc-cooper-fill" x1="0" y1="0" x2="0" y2="1">
@@ -70,6 +70,13 @@ export function HerdingCurves() {
             strokeLinejoin="round"
             strokeLinecap="round"
           />
+
+          {/* shared entry — both dogs start below the lowest V of the tape */}
+          <line x1="232" y1="402" x2="232" y2="392" stroke="var(--gain)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.8" />
+          <circle cx="232" cy="392" r="7" fill="var(--gain)" />
+          <text x="232" y="374" textAnchor="middle" fontSize="13" className="font-mono" fill="var(--gain)">
+            MINNIE & COOPER ENTRY · shared
+          </text>
 
           {/* Cooper curve — long, wide, thick */}
           <path d={COOPER} fill="none" stroke="var(--cooper)" strokeWidth="9" strokeLinecap="round" />
@@ -99,6 +106,9 @@ export function HerdingCurves() {
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           <span className="flex items-center gap-2">
             <span className="h-0.5 w-6 bg-primary" /> market tape
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-gain" /> entry · both dogs
           </span>
           <span className="flex items-center gap-2">
             <span className="h-1 w-6 rounded bg-minnie" /> Minnie curve · tight arc
