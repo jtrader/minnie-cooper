@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Settings2, ShieldAlert } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Settings2, ShieldAlert, LogOut } from "lucide-react";
 import { OptimalLogo } from "@/components/kraken/optimal-logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +20,10 @@ import { BridgeErrorNotice } from "@/components/kraken/bridge-error-notice";
 import { listTools } from "@/lib/kraken/client";
 import { guessTool } from "@/lib/kraken/discovery";
 import { useBridgeSettings, useToolMap, type SectionKey } from "@/lib/kraken/settings";
+import { AuthGate } from "@/components/auth/auth-gate";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Optimal Risk Management — Dashboard" },
@@ -36,18 +38,35 @@ export const Route = createFileRoute("/")({
         content: "Balances, market data, stop-loss curves and order history from your local kraken-bridge.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://kraken-command-center.lovable.app/" },
+      { property: "og:url", content: "https://kraken-command-center.lovable.app/dashboard" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://kraken-command-center.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://kraken-command-center.lovable.app/dashboard" }],
   }),
-  component: Dashboard,
+  component: DashboardRoute,
 });
+
+function DashboardRoute() {
+  return (
+    <AuthGate>
+      <Dashboard />
+    </AuthGate>
+  );
+}
 
 function Dashboard() {
   const { settings, setSettings, hydrated, configured } = useBridgeSettings();
   const { toolMap, setToolFor, toolMapHydrated } = useToolMap();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    void navigate({ to: "/", replace: true });
+  };
 
   const toolsQuery = useQuery({
     queryKey: ["tools", settings.baseUrl, settings.token],
@@ -110,6 +129,10 @@ function Dashboard() {
               />
             </DialogContent>
           </Dialog>
+          <Button variant="ghost" size="sm" onClick={() => void signOut()}>
+            <LogOut className="h-3.5 w-3.5" />
+            Sign out
+          </Button>
           </div>
         </header>
 
