@@ -155,7 +155,7 @@ export function HerdingCurves() {
             trend actually breaks, capturing the bulk of the move in one gather.
           </p>
           <dl className="mt-5 grid grid-cols-2 gap-3 font-mono text-xs">
-            <Stat icon={Timer} label="Horizon" value="Days → weeks" />
+            <Stat icon={Timer} label="Horizon" value="Hours → Days" />
             <Stat icon={TrendingUp} label="Exits" value="Late, rare, large" />
             <Stat icon={ArrowUpRight} label="Arc" value="Long, wide, patient" />
             <Stat icon={Flag} label="Guards" value="The whole run" />
