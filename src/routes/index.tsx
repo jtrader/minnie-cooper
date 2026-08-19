@@ -1,154 +1,178 @@
-import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Settings2, ShieldAlert } from "lucide-react";
-import { OptimalLogo } from "@/components/kraken/optimal-logo";
+import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, Activity, LineChart, Wallet, Terminal, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { SettingsPanel } from "@/components/kraken/settings-panel";
-import { BalancesCard } from "@/components/kraken/balances-card";
-import { MarketCard } from "@/components/kraken/market-card";
-import { TradesCard } from "@/components/kraken/trades-card";
-import { ToolExplorer } from "@/components/kraken/tool-explorer";
-import { BridgeErrorNotice } from "@/components/kraken/bridge-error-notice";
-import { listTools } from "@/lib/kraken/client";
-import { guessTool } from "@/lib/kraken/discovery";
-import { useBridgeSettings, useToolMap, type SectionKey } from "@/lib/kraken/settings";
+import { OptimalLogo } from "@/components/kraken/optimal-logo";
+import { AuthModal } from "@/components/auth/auth-modal";
+import { useAuthSession } from "@/components/auth/use-auth-session";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): { auth?: "1" } =>
+    search["auth"] === "1" ? { auth: "1" } : {},
   head: () => ({
     meta: [
-      { title: "Optimal Risk Management — Dashboard" },
+      { title: "Optimal — Kraken Trading Dashboard" },
       {
         name: "description",
         content:
-          "Kraken trading dashboard with balances, market data, stop-loss curves and order history via local kraken-bridge.",
+          "Optimal is a dark, data-dense Kraken trading dashboard: live balances, market data, recent trades, stop-loss curves and a raw tool explorer.",
       },
-      { property: "og:title", content: "Optimal Risk Management — Dashboard" },
+      { property: "og:title", content: "Optimal — Kraken Trading Dashboard" },
       {
         property: "og:description",
-        content: "Balances, market data, stop-loss curves and order history from your local kraken-bridge.",
+        content:
+          "Live Kraken balances, market data, recent trades and stop-loss curves in one dark, data-dense dashboard.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://kraken-command-center.lovable.app/" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://kraken-command-center.lovable.app/" }],
   }),
-  component: Dashboard,
+  component: Landing,
 });
 
-function Dashboard() {
-  const { settings, setSettings, hydrated, configured } = useBridgeSettings();
-  const { toolMap, setToolFor, toolMapHydrated } = useToolMap();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+const features = [
+  {
+    icon: Wallet,
+    title: "Account balances",
+    body: "Live spot balances pulled straight from your Kraken account, in monospace precision.",
+  },
+  {
+    icon: LineChart,
+    title: "Market data",
+    body: "Auto-refreshing tickers with green/red movement so you read the tape at a glance.",
+  },
+  {
+    icon: Activity,
+    title: "Recent trades",
+    body: "Your latest fills and orders, timestamped and side-coloured for quick scanning.",
+  },
+  {
+    icon: Terminal,
+    title: "Tool explorer",
+    body: "Call any bridge tool directly and inspect the raw JSON response — nothing hidden.",
+  },
+];
 
-  const toolsQuery = useQuery({
-    queryKey: ["tools", settings.baseUrl, settings.token],
-    enabled: configured,
-    retry: false,
-    queryFn: () => listTools(settings),
-  });
+function Landing() {
+  const { auth } = Route.useSearch();
+  const { status } = useAuthSession();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
 
-  const tools = toolsQuery.data ?? [];
+  useEffect(() => {
+    if (auth === "1") setOpen(true);
+  }, [auth]);
 
-  const resolve = (section: SectionKey) => {
-    const chosen = toolMap[section];
-    // Keep the saved pick while the tool list is still loading, and whenever
-    // the bridge still exposes it.
-    if (chosen && (tools.length === 0 || tools.some((tool) => tool.name === chosen))) {
-      return { name: chosen, needsPicker: true };
+  const launch = (next: "sign-in" | "sign-up") => {
+    if (status === "signed-in") {
+      void navigate({ to: "/dashboard" });
+      return;
     }
-    const guess = guessTool(tools, section);
-    return { name: guess.tool?.name, needsPicker: !guess.confident };
+    setMode(next);
+    setOpen(true);
   };
 
-  if (!hydrated || !toolMapHydrated) return null;
-
-  const balances = resolve("balances");
-  const ticker = resolve("ticker");
-  const trades = resolve("trades");
-
   return (
-    <main className="min-h-screen bg-background px-4 py-4">
-      <div className="mx-auto max-w-6xl space-y-3">
-        <header className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-col gap-0.5">
-            <OptimalLogo />
-            <p className="font-mono text-[11px] text-muted-foreground">
-              {configured ? `kraken-bridge: ${settings.baseUrl}` : "kraken-bridge not configured"}
-            </p>
-          </div>
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <OptimalLogo />
           <div className="flex items-center gap-2">
-          <Link
-            to="/stop-loss"
-            className="inline-flex items-center gap-1.5 rounded-md border border-input px-2.5 py-1.5 text-xs font-medium hover:bg-accent"
-          >
-            <ShieldAlert className="h-3.5 w-3.5" /> Stop-Loss
-          </Link>
-          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings2 className="h-3.5 w-3.5" />
-                Settings
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Bridge settings</DialogTitle>
-              </DialogHeader>
-              <SettingsPanel
-                settings={settings}
-                onSave={setSettings}
-                onDone={() => setSettingsOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
+            <Button variant="ghost" size="sm" onClick={() => launch("sign-in")}>
+              Sign In
+            </Button>
+            <Button size="sm" onClick={() => launch("sign-up")}>
+              Get Started
+            </Button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {configured ? (
-          <>
-            {toolsQuery.error ? <BridgeErrorNotice error={toolsQuery.error} /> : null}
-            {toolsQuery.isLoading ? (
-              <p className="text-xs text-muted-foreground">Discovering tools…</p>
-            ) : null}
+      <main>
+        <section className="mx-auto max-w-6xl px-4 py-16">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[#4ECDC4]">
+            Kraken · risk management console
+          </p>
+          <h1 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            Your Kraken account, in one dense dashboard.
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            Optimal connects to your locally-running kraken-bridge and surfaces live balances,
+            market data, recent trades and hand-drawn stop-loss curves — no keys ever leave your
+            machine.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button onClick={() => launch("sign-up")}>
+              Get Started <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={() => launch("sign-in")}>
+              Sign In
+            </Button>
+          </div>
 
-            <div className="grid gap-3 lg:grid-cols-2">
-              <BalancesCard
-                settings={settings}
-                tools={tools}
-                toolName={balances.name}
-                needsPicker={balances.needsPicker}
-                onSelectTool={(name) => setToolFor("balances", name)}
-              />
-              <MarketCard
-                settings={settings}
-                tools={tools}
-                toolName={ticker.name}
-                needsPicker={ticker.needsPicker}
-                onSelectTool={(name) => setToolFor("ticker", name)}
-              />
+          <div className="mt-12 grid gap-2 rounded-lg border border-border bg-card p-4 font-mono text-xs sm:grid-cols-3">
+            <Row label="XBT/USD" value="64,812.40" change="+1.84%" up />
+            <Row label="ETH/USD" value="3,241.07" change="+0.92%" up />
+            <Row label="SOL/USD" value="142.68" change="-2.31%" />
+          </div>
+        </section>
+
+        <section className="border-t border-border bg-card/30">
+          <div className="mx-auto grid max-w-6xl gap-3 px-4 py-12 sm:grid-cols-2">
+            {features.map((feature) => (
+              <div key={feature.title} className="rounded-lg border border-border bg-card p-4">
+                <feature.icon className="h-4 w-4 text-[#4ECDC4]" />
+                <h2 className="mt-3 text-sm font-semibold text-foreground">{feature.title}</h2>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{feature.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-12">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-6">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="mt-0.5 h-4 w-4 text-[#4ECDC4]" />
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Stop-loss curves</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Draw price floors over time and let the bridge monitor them continuously.
+                </p>
+              </div>
             </div>
+            <Button size="sm" onClick={() => launch("sign-in")}>
+              Open dashboard
+            </Button>
+          </div>
+        </section>
+      </main>
 
-            <TradesCard
-              settings={settings}
-              tools={tools}
-              toolName={trades.name}
-              needsPicker={trades.needsPicker}
-              onSelectTool={(name) => setToolFor("trades", name)}
-            />
+      <footer className="border-t border-border">
+        <div className="mx-auto max-w-6xl px-4 py-6 font-mono text-[11px] text-muted-foreground">
+          Optimal Risk Management · dashboard access requires sign in
+        </div>
+      </footer>
 
-            <ToolExplorer settings={settings} tools={tools} />
-          </>
-        ) : null}
-      </div>
-    </main>
+      <AuthModal
+        open={open}
+        onOpenChange={setOpen}
+        defaultMode={mode}
+        onAuthenticated={() => {
+          setOpen(false);
+          void navigate({ to: "/dashboard" });
+        }}
+      />
+    </div>
+  );
+}
+
+function Row({ label, value, change, up }: { label: string; value: string; change: string; up?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 px-2 py-1.5">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="tabular-nums text-foreground">{value}</span>
+      <span className={up ? "text-emerald-400" : "text-red-400"}>{change}</span>
+    </div>
   );
 }

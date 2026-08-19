@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { AuthGate } from "@/components/auth/auth-gate";
 import { StopLossPanel } from "@/components/kraken/stoploss-panel";
 import { useBridgeSettings } from "@/lib/kraken/settings";
 
@@ -23,8 +24,16 @@ export const Route = createFileRoute("/stop-loss")({
     ],
     links: [{ rel: "canonical", href: "https://kraken-command-center.lovable.app/stop-loss" }],
   }),
-  component: StopLossPage,
+  component: StopLossRoute,
 });
+
+function StopLossRoute() {
+  return (
+    <AuthGate>
+      <StopLossPage />
+    </AuthGate>
+  );
+}
 
 function StopLossPage() {
   const { settings, hydrated, configured } = useBridgeSettings();
