@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ibkr_settings: {
+        Row: {
+          created_at: string
+          default_account_id: string | null
+          gateway_base_url: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_account_id?: string | null
+          gateway_base_url?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_account_id?: string | null
+          gateway_base_url?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       kraken_credentials: {
         Row: {
           api_key_ciphertext: string
