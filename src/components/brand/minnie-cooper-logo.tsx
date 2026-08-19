@@ -26,11 +26,11 @@ function CollieHead({ className, title }: CollieHeadProps) {
 }
 
 /** Icon-only mark: Cooper (larger, chestnut) behind Minnie (smaller, ink). */
-export function MinnieCooperMark({ className = "h-10 w-12" }: { className?: string }) {
+export function MinnieCooperMark({ className = "h-10 w-14" }: { className?: string }) {
   return (
     <span className={`relative inline-block shrink-0 ${className}`} aria-hidden="true">
-      <CollieHead className="absolute right-0 top-0 h-full w-[80%] text-cooper" />
-      <CollieHead className="absolute bottom-0 left-0 h-[72%] w-[58%] text-minnie" />
+      <CollieHead className="absolute right-0 top-0 h-full w-[62%] text-cooper" />
+      <CollieHead className="absolute bottom-0 left-0 h-[66%] w-[46%] text-minnie" />
     </span>
   );
 }
