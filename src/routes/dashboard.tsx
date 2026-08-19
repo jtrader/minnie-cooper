@@ -22,6 +22,7 @@ import { guessTool } from "@/lib/kraken/discovery";
 import { useBridgeSettings, useToolMap, type SectionKey } from "@/lib/kraken/settings";
 import { AuthGate } from "@/components/auth/auth-gate";
 import { KrakenAccountButton } from "@/components/kraken/kraken-account-button";
+import { KrakenConnectionProvider } from "@/components/kraken/kraken-connection";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
@@ -50,7 +51,9 @@ export const Route = createFileRoute("/dashboard")({
 function DashboardRoute() {
   return (
     <AuthGate>
-      <Dashboard />
+      <KrakenConnectionProvider>
+        <Dashboard />
+      </KrakenConnectionProvider>
     </AuthGate>
   );
 }

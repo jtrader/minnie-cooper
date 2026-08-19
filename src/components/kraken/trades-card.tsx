@@ -1,12 +1,16 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { ArrowDown, ArrowUp, History, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BridgeErrorNotice } from "./bridge-error-notice";
 import { ToolPicker } from "./tool-picker";
+import { ConnectPrompt, KrakenErrorNotice } from "./connect-prompt";
+import { useKrakenConnection } from "./kraken-connection";
 import { callTool, extractPayload } from "@/lib/kraken/client";
 import { parseTrades } from "@/lib/kraken/parse";
 import { formatNumber, formatTime } from "@/lib/kraken/format";
+import { krakenPrivateRequest } from "@/lib/kraken/credentials.functions";
 import type { BridgeSettings, McpTool, TradeRow } from "@/lib/kraken/types";
 
 type SortKey = keyof Pick<TradeRow, "time" | "pair" | "side" | "price" | "size" | "status">;
@@ -37,16 +41,35 @@ export function TradesCard({
 }: TradesCardProps) {
   const [sortKey, setSortKey] = useState<SortKey>("time");
   const [asc, setAsc] = useState(false);
+  const { connected } = useKrakenConnection();
+  const krakenRequest = useServerFn(krakenPrivateRequest);
 
-  const query = useQuery({
-    queryKey: ["trades", settings.baseUrl, toolName],
-    enabled: Boolean(toolName),
+  const krakenQuery = useQuery({
+    queryKey: ["kraken-orders"],
+    enabled: connected,
     retry: false,
-    queryFn: async () => extractPayload(await callTool(settings, toolName as string)),
+    // Same 30s cadence as balances to stay well inside Kraken's rate limits.
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      // Sequential, not parallel: Kraken nonces must strictly increase.
+      const closed = await krakenRequest({ data: { endpoint: "ClosedOrders" } });
+      const open = await krakenRequest({ data: { endpoint: "OpenOrders" } });
+      return [...parseTrades(open), ...parseTrades(closed)];
+    },
   });
 
+  const bridgeQuery = useQuery({
+    queryKey: ["trades", settings.baseUrl, toolName],
+    enabled: !connected && Boolean(toolName),
+    retry: false,
+    queryFn: async () => parseTrades(extractPayload(await callTool(settings, toolName as string))),
+  });
+
+  const query = connected ? krakenQuery : bridgeQuery;
+  const canRefresh = connected || Boolean(toolName);
+
   const rows = useMemo(() => {
-    const parsed = parseTrades(query.data);
+    const parsed: TradeRow[] = query.data ?? [];
     const sorted = [...parsed].sort((a, b) => {
       const left = a[sortKey];
       const right = b[sortKey];
@@ -72,14 +95,18 @@ export function TradesCard({
         <div className="flex items-center gap-2">
           <History className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold tracking-tight">Recent trades &amp; orders</h2>
-          {toolName ? (
+          {connected ? (
+            <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-[#4ECDC4]">
+              kraken:Open+ClosedOrders
+            </code>
+          ) : toolName ? (
             <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
               {toolName}
             </code>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          {needsPicker || !toolName ? (
+          {!connected && (needsPicker || !toolName) ? (
             <ToolPicker tools={tools} value={toolName} onChange={onSelectTool} />
           ) : null}
           <Button
@@ -87,7 +114,7 @@ export function TradesCard({
             size="icon"
             className="h-7 w-7"
             onClick={() => query.refetch()}
-            disabled={!toolName || query.isFetching}
+            disabled={!canRefresh || query.isFetching}
             aria-label="Refresh trades"
           >
             {query.isFetching ? (
@@ -100,13 +127,18 @@ export function TradesCard({
       </header>
 
       <div className="p-3">
-        {!toolName ? (
+        {!connected ? <ConnectPrompt /> : null}
+        {!connected && !toolName ? (
           <p className="text-xs text-muted-foreground">
             No trades/orders tool identified. Pick the tool that returns your trade or order
             history.
           </p>
         ) : query.error ? (
-          <BridgeErrorNotice error={query.error} />
+          connected ? (
+            <KrakenErrorNotice error={query.error} />
+          ) : (
+            <BridgeErrorNotice error={query.error} />
+          )
         ) : query.isLoading ? (
           <p className="text-xs text-muted-foreground">Loading activity…</p>
         ) : rows.length === 0 ? (
