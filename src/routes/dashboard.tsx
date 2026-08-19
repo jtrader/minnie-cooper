@@ -23,6 +23,8 @@ import { useBridgeSettings, useToolMap, type SectionKey } from "@/lib/kraken/set
 import { AuthGate } from "@/components/auth/auth-gate";
 import { KrakenAccountButton } from "@/components/kraken/kraken-account-button";
 import { KrakenConnectionProvider } from "@/components/kraken/kraken-connection";
+import { useKrakenConnection } from "@/components/kraken/kraken-connection";
+import { ConnectPrompt } from "@/components/kraken/connect-prompt";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
@@ -61,6 +63,7 @@ function DashboardRoute() {
 function Dashboard() {
   const { settings, setSettings, hydrated, configured } = useBridgeSettings();
   const { toolMap, setToolFor, toolMapHydrated } = useToolMap();
+  const { connected } = useKrakenConnection();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -141,9 +144,9 @@ function Dashboard() {
           </div>
         </header>
 
-        {configured ? (
+        {configured || connected ? (
           <>
-            {toolsQuery.error ? <BridgeErrorNotice error={toolsQuery.error} /> : null}
+            {configured && toolsQuery.error ? <BridgeErrorNotice error={toolsQuery.error} /> : null}
             {toolsQuery.isLoading ? (
               <p className="text-xs text-muted-foreground">Discovering tools…</p>
             ) : null}
@@ -173,9 +176,11 @@ function Dashboard() {
               onSelectTool={(name) => setToolFor("trades", name)}
             />
 
-            <ToolExplorer settings={settings} tools={tools} />
+            {configured ? <ToolExplorer settings={settings} tools={tools} /> : null}
           </>
-        ) : null}
+        ) : (
+          <ConnectPrompt note="No data source yet — connect your Kraken account, or configure the local bridge in Settings." />
+        )}
       </div>
     </main>
   );
