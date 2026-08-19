@@ -108,6 +108,9 @@ export function HerdingCurves() {
             <span className="h-0.5 w-6 bg-primary" /> market tape
           </span>
           <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-gain" /> entry · both dogs
+          </span>
+          <span className="flex items-center gap-2">
             <span className="h-1 w-6 rounded bg-minnie" /> Minnie curve · tight arc
           </span>
           <span className="flex items-center gap-2">
