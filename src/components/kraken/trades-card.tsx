@@ -96,7 +96,7 @@ export function TradesCard({
           <History className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold tracking-tight">Recent trades &amp; orders</h2>
           {connected ? (
-            <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-[#4ECDC4]">
+            <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-primary">
               kraken:Open+ClosedOrders
             </code>
           ) : toolName ? (

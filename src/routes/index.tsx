@@ -91,7 +91,7 @@ function Landing() {
 
       <main>
         <section className="mx-auto max-w-6xl px-4 py-16">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[#4ECDC4]">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-primary">
             Kraken · risk management console
           </p>
           <h1 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -122,7 +122,7 @@ function Landing() {
           <div className="mx-auto grid max-w-6xl gap-3 px-4 py-12 sm:grid-cols-2">
             {features.map((feature) => (
               <div key={feature.title} className="rounded-lg border border-border bg-card p-4">
-                <feature.icon className="h-4 w-4 text-[#4ECDC4]" />
+                <feature.icon className="h-4 w-4 text-primary" />
                 <h2 className="mt-3 text-sm font-semibold text-foreground">{feature.title}</h2>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{feature.body}</p>
               </div>
@@ -133,7 +133,7 @@ function Landing() {
         <section className="mx-auto max-w-6xl px-4 py-12">
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-6">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="mt-0.5 h-4 w-4 text-[#4ECDC4]" />
+              <ShieldAlert className="mt-0.5 h-4 w-4 text-primary" />
               <div>
                 <h2 className="text-sm font-semibold text-foreground">Stop-loss curves</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
