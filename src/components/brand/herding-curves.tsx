@@ -44,7 +44,7 @@ export function HerdingCurves() {
           viewBox={`0 0 ${W} ${H}`}
           className="h-auto w-full"
           role="img"
-          aria-label="Diagram: a rising, choppy market path that peaks and reverses. A short tight black curve (Minnie) rises steeply and meets price at the mid-trend pullback for an early exit. A longer, wider orange curve (Cooper) sweeps beneath the whole advance and meets price just after the peak for a later, larger exit."
+          aria-label="Diagram: a rising, choppy market path that peaks and reverses. A green dot marks the shared Minnie and Cooper entry just above the lowest V of the tape. A short tight black curve (Minnie) rises steeply and meets price at the mid-trend pullback for an early exit. A longer, wider orange curve (Cooper) sweeps beneath the whole advance and meets price just after the peak for a later, larger exit."
         >
           <defs>
             <linearGradient id="hc-cooper-fill" x1="0" y1="0" x2="0" y2="1">
