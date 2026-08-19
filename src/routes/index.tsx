@@ -24,20 +24,22 @@ import { useBridgeSettings, useToolMap, type SectionKey } from "@/lib/kraken/set
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Kraken Bridge Dashboard — Balances, Market Data, Orders" },
+      { title: "Optimal Risk Management — Dashboard" },
       {
         name: "description",
         content:
-          "A local single-user Kraken trading dashboard that reads balances, live prices and order history from your kraken-bridge service.",
+          "Kraken trading dashboard with balances, market data, stop-loss curves and order history via local kraken-bridge.",
       },
-      { property: "og:title", content: "Kraken Bridge Dashboard" },
+      { property: "og:title", content: "Optimal Risk Management — Dashboard" },
       {
         property: "og:description",
-        content: "Balances, live market data and order history from your local kraken-bridge.",
+        content: "Balances, market data, stop-loss curves and order history from your local kraken-bridge.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://kraken-command-center.lovable.app/" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "https://kraken-command-center.lovable.app/" }],
   }),
   component: Dashboard,
 });
