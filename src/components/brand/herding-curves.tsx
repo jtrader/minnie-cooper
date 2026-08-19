@@ -1,35 +1,22 @@
-import { ArrowDownRight, Dog, Flag, Repeat, Timer, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Dog, Flag, Repeat, Timer, TrendingUp } from "lucide-react";
 
 /**
- * Editorial explainer: the two stop-loss curve styles named after the dogs.
+ * Editorial explainer: the two curved stop-loss lines named after the dogs.
  * Presentation only — no trading logic lives here.
  */
 
 const W = 1000;
-const H = 420;
+const H = 500;
 
-/** Market path (a rising, choppy tape). */
+/** Market path: a rising, choppy tape that peaks and then breaks down hard. */
 const PRICE =
-  "M 40 330 L 110 300 L 165 322 L 225 268 L 285 292 L 350 232 L 415 262 L 480 196 L 545 226 L 610 168 L 675 200 L 740 140 L 805 176 L 870 108 L 940 132";
+  "M 40 388 L 138 330 L 232 402 L 384 250 L 515 312 L 706 104 L 928 372";
 
-/** Minnie: tight, sharp, hugs every swing low. */
-const MINNIE =
-  "M 40 352 L 110 330 L 165 344 L 225 296 L 285 314 L 350 258 L 415 284 L 480 224 L 545 250 L 610 196 L 675 224 L 740 168 L 805 200 L 870 136 L 940 158";
+/** Minnie: the short, tight arc — curls up under the near swing and cuts in early. */
+const MINNIE = "M 171 432 C 300 424, 430 394, 458 286";
 
-/** Cooper: one long, patient floor sweeping under the whole trend. */
-const COOPER = "M 40 384 C 260 372, 470 322, 640 274 S 860 206, 940 186";
-
-/** Where Minnie takes small, frequent profits. */
-const MINNIE_TAKES = [225, 350, 480, 610, 740, 870];
-
-function priceYAt(x: number) {
-  const pts = PRICE.replace(/[ML]/g, "")
-    .trim()
-    .split(/\s+/)
-    .map(Number);
-  for (let i = 0; i < pts.length; i += 2) if (pts[i] === x) return pts[i + 1];
-  return 200;
-}
+/** Cooper: the long, wide arc — sweeps under the whole advance and only bites at the top. */
+const COOPER = "M 225 450 C 500 444, 700 362, 742 148";
 
 export function HerdingCurves() {
   return (
@@ -39,14 +26,16 @@ export function HerdingCurves() {
           <Dog className="h-3.5 w-3.5 text-primary" /> The herding method
         </span>
         <h2 id="herding-heading" className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Two dogs. Two curves. One flock of profit.
+          Two curves. Two dogs. One flock brought home.
         </h2>
         <p className="text-base leading-relaxed text-muted-foreground">
-          A border collie never chases the whole flock at once. It works the edges — nudging strays
-          back, closing the gap behind them, never letting the group drift downhill. Your open
-          profit behaves exactly like a flock: it scatters, it wanders, and left alone it walks
-          straight back down the paddock. Minnie and Cooper are the two working lines you draw
-          under it. Minnie holds the near edge. Cooper walks the whole field home.
+          Both Minnie and Cooper are the same shape: a curve that starts flat and steepens as a
+          trend matures — patient early, impatient late. The only difference is how wide the arc is
+          drawn. Minnie runs a short, tight arc close under the recent swings, so she meets price on
+          the first real pullback and banks a smaller, certain gain. Cooper runs a long, wide arc
+          under the whole advance, letting the mid-trend shakeouts pass and only closing the gate
+          once the trend itself turns. Neither curve ever moves down — like a collie closing on the
+          flock, the distance only ever shrinks.
         </p>
       </header>
 
@@ -55,94 +44,67 @@ export function HerdingCurves() {
           viewBox={`0 0 ${W} ${H}`}
           className="h-auto w-full"
           role="img"
-          aria-label="Diagram: a rising, choppy market path with Minnie's tight short-term stop curve hugging each swing low and Cooper's long sweeping curve running underneath the whole trend, with profit taken at each contact point."
+          aria-label="Diagram: a rising, choppy market path that peaks and reverses. A short tight black curve (Minnie) rises steeply and meets price at the mid-trend pullback for an early exit. A longer, wider orange curve (Cooper) sweeps beneath the whole advance and meets price just after the peak for a later, larger exit."
         >
           <defs>
             <linearGradient id="hc-cooper-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--cooper)" stopOpacity="0.22" />
+              <stop offset="0%" stopColor="var(--cooper)" stopOpacity="0.16" />
               <stop offset="100%" stopColor="var(--cooper)" stopOpacity="0" />
             </linearGradient>
-            <marker id="hc-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted-foreground)" />
-            </marker>
           </defs>
 
           {/* paddock grid */}
-          {[100, 160, 220, 280, 340].map((y) => (
-            <line key={y} x1="30" y1={y} x2="950" y2={y} stroke="var(--border)" strokeWidth="1" />
+          {[120, 190, 260, 330, 400].map((y) => (
+            <line key={y} x1="30" y1={y} x2="960" y2={y} stroke="var(--border)" strokeWidth="1" />
           ))}
 
-          {/* the gate / pen where profit is banked */}
-          <rect x="946" y="80" width="22" height="300" rx="6" fill="var(--gain)" opacity="0.12" />
-          <text
-            x="957"
-            y="70"
-            textAnchor="middle"
-            className="font-mono"
-            fontSize="11"
-            fill="var(--gain)"
-          >
-            PEN
-          </text>
-
-          {/* Cooper zone */}
-          <path d={`${COOPER} L 940 396 L 40 396 Z`} fill="url(#hc-cooper-fill)" />
+          {/* the zone Cooper allows price to breathe in */}
+          <path d={`${COOPER} L 742 452 L 225 452 Z`} fill="url(#hc-cooper-fill)" />
 
           {/* market tape */}
-          <path d={PRICE} fill="none" stroke="var(--foreground)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+          <path
+            d={PRICE}
+            fill="none"
+            stroke="var(--chart-1, var(--primary))"
+            strokeWidth="2.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
 
-          {/* the flock: open profit drifting above the floor */}
-          {MINNIE_TAKES.map((x) => (
-            <g key={`flock-${x}`}>
-              <circle cx={x} cy={priceYAt(x) - 26} r="7" fill="var(--muted)" stroke="var(--foreground)" strokeWidth="1.5" />
-              <circle cx={x + 14} cy={priceYAt(x) - 14} r="5" fill="var(--muted)" stroke="var(--foreground)" strokeWidth="1.2" opacity="0.8" />
-            </g>
-          ))}
+          {/* Cooper curve — long, wide, thick */}
+          <path d={COOPER} fill="none" stroke="var(--cooper)" strokeWidth="9" strokeLinecap="round" />
+          {/* Minnie curve — short, tight, sharp */}
+          <path d={MINNIE} fill="none" stroke="var(--minnie)" strokeWidth="5.5" strokeLinecap="round" />
 
-          {/* Cooper curve */}
-          <path d={COOPER} fill="none" stroke="var(--cooper)" strokeWidth="4" strokeLinecap="round" />
-          {/* Minnie curve */}
-          <path d={MINNIE} fill="none" stroke="var(--minnie)" strokeWidth="2.5" strokeDasharray="7 5" strokeLinejoin="round" strokeLinecap="round" />
+          {/* Minnie's early exit, on the first pullback */}
+          <circle cx="458" cy="286" r="7" fill="var(--minnie)" />
+          <line x1="458" y1="286" x2="458" y2="162" stroke="var(--minnie)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.6" />
+          <text x="448" y="152" textAnchor="end" fontSize="13" className="font-mono" fill="var(--minnie)">
+            MINNIE EXIT · early, smaller
+          </text>
 
-          {/* Minnie's small, frequent profit takes */}
-          {MINNIE_TAKES.map((x) => {
-            const y = priceYAt(x);
-            return (
-              <g key={`take-${x}`}>
-                <line x1={x} y1={y} x2={x} y2={y + 26} stroke="var(--minnie)" strokeWidth="1.5" markerEnd="url(#hc-arrow)" opacity="0.7" />
-                <circle cx={x} cy={y} r="5" fill="var(--minnie)" />
-              </g>
-            );
-          })}
-
-          {/* Cooper's single, large take at the gate */}
-          <circle cx="940" cy="132" r="8" fill="var(--cooper)" />
-          <line x1="940" y1="132" x2="940" y2="186" stroke="var(--cooper)" strokeWidth="2" strokeDasharray="4 4" />
+          {/* Cooper's late exit, just after the turn */}
+          <circle cx="742" cy="148" r="8" fill="var(--cooper)" />
+          <line x1="742" y1="148" x2="742" y2="72" stroke="var(--cooper)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.7" />
+          <text x="752" y="64" fontSize="13" className="font-mono" fill="var(--cooper)">
+            COOPER EXIT · late, larger
+          </text>
 
           {/* labels */}
-          <text x="60" y="348" fontSize="13" className="font-mono" fill="var(--minnie)">
-            MINNIE · tight edge
-          </text>
-          <text x="60" y="392" fontSize="13" className="font-mono" fill="var(--cooper)">
-            COOPER · long sweep
-          </text>
-          <text x="120" y="284" fontSize="12" className="font-mono" fill="var(--muted-foreground)">
-            open profit (the flock)
+          <text x="40" y="486" fontSize="12" className="font-mono" fill="var(--muted-foreground)">
+            trend begins — both curves sit flat and far below price
           </text>
         </svg>
 
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           <span className="flex items-center gap-2">
-            <span className="h-0.5 w-6 bg-foreground" /> market tape
+            <span className="h-0.5 w-6 bg-primary" /> market tape
           </span>
           <span className="flex items-center gap-2">
-            <span className="h-0.5 w-6 border-t-2 border-dashed border-minnie" /> Minnie floor
+            <span className="h-1 w-6 rounded bg-minnie" /> Minnie curve · tight arc
           </span>
           <span className="flex items-center gap-2">
-            <span className="h-1 w-6 rounded bg-cooper" /> Cooper floor
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-gain" /> profit banked
+            <span className="h-1.5 w-6 rounded bg-cooper" /> Cooper curve · wide arc
           </span>
         </div>
       </div>
@@ -152,20 +114,20 @@ export function HerdingCurves() {
           <div className="flex items-center justify-between">
             <h3 className="font-display text-2xl font-bold text-card-foreground">Minnie</h3>
             <span className="rounded-md bg-minnie/10 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground">
-              Short term · sharp
+              Short term · tight arc
             </span>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The smaller, faster dog. She works close to the flock — quick outruns, sharp turns,
-            constant pressure. Her curve sits just under each swing low, so any stray move down is
-            met immediately. You give up the big run, but you never give back what you already
-            earned. Many small, clean gathers.
+            The smaller, faster dog works close to the flock. Her arc is drawn short and steep just
+            under the recent swings, so the first genuine pullback puts price into the curve and the
+            trade is closed. You forfeit the rest of the run, but the gain you already made is never
+            handed back. Many small, clean gathers.
           </p>
           <dl className="mt-5 grid grid-cols-2 gap-3 font-mono text-xs">
             <Stat icon={Timer} label="Horizon" value="Minutes → hours" />
-            <Stat icon={Repeat} label="Takes" value="Frequent, small" />
-            <Stat icon={ArrowDownRight} label="Buffer" value="Tight (0.5–2%)" />
-            <Stat icon={Flag} label="Guards" value="Realised gains" />
+            <Stat icon={Repeat} label="Exits" value="Early, frequent" />
+            <Stat icon={ArrowUpRight} label="Arc" value="Short, steep, close" />
+            <Stat icon={Flag} label="Guards" value="Gains already made" />
           </dl>
         </article>
 
@@ -173,32 +135,32 @@ export function HerdingCurves() {
           <div className="flex items-center justify-between">
             <h3 className="font-display text-2xl font-bold text-card-foreground">Cooper</h3>
             <span className="rounded-md bg-cooper/10 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-cooper">
-              Long term · steady
+              Long term · wide arc
             </span>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The bigger, calmer dog. He holds the far side of the paddock and walks the whole flock
-            home in one long line. His curve rides well below the noise, rising only as the trend
-            rises — a ratchet that never loosens. Volatility is allowed to breathe; a genuine trend
-            break is not.
+            The bigger, calmer dog holds the far side of the paddock. His arc starts wider and lower,
+            so mid-trend shakeouts pass straight through it untouched. It steepens as the advance
+            matures until it is nearly vertical at the top — meaning the exit lands just after the
+            trend actually breaks, capturing the bulk of the move in one gather.
           </p>
           <dl className="mt-5 grid grid-cols-2 gap-3 font-mono text-xs">
             <Stat icon={Timer} label="Horizon" value="Days → weeks" />
-            <Stat icon={TrendingUp} label="Takes" value="Rare, large" />
-            <Stat icon={ArrowDownRight} label="Buffer" value="Wide (5–15%)" />
+            <Stat icon={TrendingUp} label="Exits" value="Late, rare, large" />
+            <Stat icon={ArrowUpRight} label="Arc" value="Long, wide, patient" />
             <Stat icon={Flag} label="Guards" value="The whole run" />
           </dl>
         </article>
       </div>
 
       <div className="rounded-2xl border border-border bg-secondary/60 p-6">
-        <h3 className="font-display text-base font-semibold text-foreground">Why two dogs beat one</h3>
+        <h3 className="font-display text-base font-semibold text-foreground">Why two curves beat one</h3>
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          A single tight stop gets shaken out by ordinary noise. A single wide stop hands back
-          months of gains in one bad session. Run both curves on the same position and they cover
-          each other's flank: Minnie skims profit off every swing and keeps the account earning,
-          while Cooper stays out wide so the position is still on when the real move arrives.
-          One rounds up the strays. The other brings the flock through the gate.
+          A single tight curve is shaken out by ordinary noise. A single wide curve hands back months
+          of gains before it triggers. Run both arcs on the same position and they cover each other's
+          flank: Minnie takes a certain profit off the first pullback and keeps the account earning,
+          while Cooper stays out wide so a share of the position is still on when the real move
+          arrives. One rounds up the strays. The other brings the flock through the gate.
         </p>
       </div>
     </section>
