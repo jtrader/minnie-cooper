@@ -7,9 +7,8 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { useAuthSession } from "@/components/auth/use-auth-session";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    auth: search["auth"] === "1" ? "1" : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { auth?: "1" } =>
+    search["auth"] === "1" ? { auth: "1" } : {},
   head: () => ({
     meta: [
       { title: "Optimal — Kraken Trading Dashboard" },
