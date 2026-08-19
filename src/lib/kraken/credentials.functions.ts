@@ -78,13 +78,12 @@ export const removeKrakenCredentials = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const ALLOWED_ENDPOINTS = ["Balance", "OpenOrders", "ClosedOrders", "Ledgers", "TradeBalance"] as const;
-
 /** Server-side proxy: decrypts stored keys and calls Kraken. Secrets never reach the browser. */
 export const krakenPrivateRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { endpoint: string; params?: Record<string, string> }) => {
-    if (!(ALLOWED_ENDPOINTS as readonly string[]).includes(input.endpoint)) {
+    const allowed = ["Balance", "OpenOrders", "ClosedOrders", "Ledgers", "TradeBalance"];
+    if (!allowed.includes(input.endpoint)) {
       throw new Error(`Endpoint "${input.endpoint}" is not allowed.`);
     }
     return { endpoint: input.endpoint, params: input.params ?? {} };
