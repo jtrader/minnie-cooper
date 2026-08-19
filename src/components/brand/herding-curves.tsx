@@ -1,4 +1,5 @@
 import { ArrowUpRight, Dog, Flag, Repeat, Timer, TrendingUp } from "lucide-react";
+import { MinnieMark, CooperMark } from "@/components/brand/minnie-cooper-marks";
 
 /**
  * Editorial explainer: the two curved stop-loss lines named after the dogs.
