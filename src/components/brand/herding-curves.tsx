@@ -6,7 +6,7 @@ import { ArrowUpRight, Dog, Flag, Repeat, Timer, TrendingUp } from "lucide-react
  */
 
 const W = 1000;
-const H = 480;
+const H = 500;
 
 /** Market path: a rising, choppy tape that peaks and then breaks down hard. */
 const PRICE =
@@ -78,8 +78,8 @@ export function HerdingCurves() {
 
           {/* Minnie's early exit, on the first pullback */}
           <circle cx="458" cy="286" r="7" fill="var(--minnie)" />
-          <line x1="458" y1="286" x2="458" y2="196" stroke="var(--minnie)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.6" />
-          <text x="468" y="188" fontSize="13" className="font-mono" fill="var(--minnie)">
+          <line x1="458" y1="286" x2="458" y2="162" stroke="var(--minnie)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.6" />
+          <text x="448" y="152" textAnchor="end" fontSize="13" className="font-mono" fill="var(--minnie)">
             MINNIE EXIT · early, smaller
           </text>
 
@@ -91,11 +91,8 @@ export function HerdingCurves() {
           </text>
 
           {/* labels */}
-          <text x="60" y="444" fontSize="12" className="font-mono" fill="var(--muted-foreground)">
-            trend begins — both curves sit flat and far away
-          </text>
-          <text x="196" y="342" fontSize="12" className="font-mono" fill="var(--muted-foreground)">
-            noise
+          <text x="40" y="486" fontSize="12" className="font-mono" fill="var(--muted-foreground)">
+            trend begins — both curves sit flat and far below price
           </text>
         </svg>
 
