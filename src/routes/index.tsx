@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Activity, LineChart, Wallet, Terminal, ShieldAlert } from "lucide-react";
+import { ArrowRight, Activity, LineChart, Wallet, Terminal, ShieldAlert, Globe, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MinnieCooperLogo } from "@/components/brand/minnie-cooper-logo";
 import { HerdingCurves } from "@/components/brand/herding-curves";
@@ -51,6 +51,16 @@ const features = [
     icon: Terminal,
     title: "Tool explorer",
     body: "Call any bridge tool directly and inspect the raw JSON response — nothing hidden.",
+  },
+  {
+    icon: Globe,
+    title: "Live trading",
+    body: "Trade across both providers from one dashboard: Kraken for crypto, and Interactive Brokers for forex, futures, indices and other supported asset classes.",
+  },
+  {
+    icon: FlaskConical,
+    title: "Demo / paper trading",
+    body: "Test strategies risk-free before going live. IBKR's free Paper Trading account connects via the same gateway, and Kraken's Demo/Futures Demo environment lets you validate without risking real funds.",
   },
 ];
 
@@ -185,7 +195,7 @@ function Landing() {
 
         <HerdingCurves />
 
-        <section className="grid gap-4 sm:grid-cols-2">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <div key={feature.title} className="rounded-2xl border border-border bg-card p-5">
               <feature.icon className="h-4 w-4 text-primary" />
