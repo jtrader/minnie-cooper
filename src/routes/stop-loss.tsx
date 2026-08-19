@@ -7,13 +7,13 @@ import { useBridgeSettings } from "@/lib/kraken/settings";
 export const Route = createFileRoute("/stop-loss")({
   head: () => ({
     meta: [
-      { title: "Stop-Loss Curves — Optimal Risk Management" },
+      { title: "Stop-Loss Curves — Minnie Cooper — Money Keeper Risk Management" },
       {
         name: "description",
         content:
           "Draw and monitor hand-made stop-loss price floors over time via your local kraken-bridge.",
       },
-      { property: "og:title", content: "Stop-Loss Curves — Optimal Risk Management" },
+      { property: "og:title", content: "Stop-Loss Curves — Minnie Cooper — Money Keeper Risk Management" },
       {
         property: "og:description",
         content: "Hand-drawn stop-loss curves monitored continuously by your local kraken-bridge.",
