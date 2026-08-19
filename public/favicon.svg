@@ -7,7 +7,7 @@
   <g clip-path="url(#mc-clip)">
     <rect x="0" y="0" width="64" height="128" fill="#171412"/>
     <rect x="64" y="0" width="64" height="128" fill="#A56336"/>
-    <path d="M56 12 L72 12 L69 44 C67.5 49 60.5 49 59 44 Z" fill="#F1E7D6"/>
+    <path d="M53 12 L77 12 L70 56 C68 66 60 66 58 56 Z" fill="#F1E7D6"/>
   </g>
   <use href="#mc-shield" fill="none" stroke="#CFA063" stroke-width="4" stroke-linejoin="round"/>
   <circle cx="46" cy="46" r="5.5" fill="#FFFFFF"/>
