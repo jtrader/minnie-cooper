@@ -71,6 +71,13 @@ export function HerdingCurves() {
             strokeLinecap="round"
           />
 
+          {/* shared entry — both dogs start below the lowest V of the tape */}
+          <line x1="232" y1="402" x2="232" y2="392" stroke="var(--gain)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.8" />
+          <circle cx="232" cy="392" r="7" fill="var(--gain)" />
+          <text x="232" y="374" textAnchor="middle" fontSize="13" className="font-mono" fill="var(--gain)">
+            MINNIE & COOPER ENTRY · shared
+          </text>
+
           {/* Cooper curve — long, wide, thick */}
           <path d={COOPER} fill="none" stroke="var(--cooper)" strokeWidth="9" strokeLinecap="round" />
           {/* Minnie curve — short, tight, sharp */}
