@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Activity, LineChart, Wallet, Terminal, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MinnieCooperLogo } from "@/components/brand/minnie-cooper-logo";
+import { HerdingCurves } from "@/components/brand/herding-curves";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { useAuthSession } from "@/components/auth/use-auth-session";
 
@@ -181,6 +182,8 @@ function Landing() {
             </button>
           </div>
         </div>
+
+        <HerdingCurves />
 
         <section className="grid gap-4 sm:grid-cols-2">
           {features.map((feature) => (
