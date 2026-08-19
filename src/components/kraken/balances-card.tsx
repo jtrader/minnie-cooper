@@ -58,7 +58,7 @@ export function BalancesCard({
           <Wallet className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold tracking-tight">Account balances</h2>
           {connected ? (
-            <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-[#4ECDC4]">
+            <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-primary">
               kraken:Balance
             </code>
           ) : toolName ? (

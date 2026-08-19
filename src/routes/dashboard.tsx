@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings2, ShieldAlert, LogOut } from "lucide-react";
-import { OptimalLogo } from "@/components/kraken/optimal-logo";
+import { MinnieCooperLogo } from "@/components/brand/minnie-cooper-logo";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,13 +30,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Optimal Risk Management — Dashboard" },
+      { title: "Minnie Cooper — Money Keeper Risk Management — Dashboard" },
       {
         name: "description",
         content:
           "Kraken trading dashboard with balances, market data, stop-loss curves and order history via local kraken-bridge.",
       },
-      { property: "og:title", content: "Optimal Risk Management — Dashboard" },
+      { property: "og:title", content: "Minnie Cooper — Money Keeper Risk Management — Dashboard" },
       {
         property: "og:description",
         content: "Balances, market data, stop-loss curves and order history from your local kraken-bridge.",
@@ -106,7 +106,7 @@ function Dashboard() {
       <div className="mx-auto max-w-6xl space-y-3">
         <header className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-col gap-0.5">
-            <OptimalLogo />
+            <MinnieCooperLogo variant="compact" />
             <p className="font-mono text-[11px] text-muted-foreground">
               {configured ? `kraken-bridge: ${settings.baseUrl}` : "kraken-bridge not configured"}
             </p>

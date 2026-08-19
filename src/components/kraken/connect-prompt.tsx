@@ -8,7 +8,7 @@ export function ConnectPrompt({ note }: { note?: string }) {
   return (
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
       <p className="text-[11px] text-muted-foreground">
-        <PlugZap className="mr-1 inline h-3.5 w-3.5 text-[#4ECDC4]" />
+        <PlugZap className="mr-1 inline h-3.5 w-3.5 text-primary" />
         {note ?? "Connect your Kraken account to see live data."}
       </p>
       <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={openConnectModal}>

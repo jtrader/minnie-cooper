@@ -69,7 +69,7 @@ export function ConnectKrakenModal({ open, onOpenChange, status, onSaved }: Conn
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="h-4 w-4 text-[#4ECDC4]" />
+            <KeyRound className="h-4 w-4 text-primary" />
             {status?.connected ? "Update Kraken connection" : "Connect Kraken"}
           </DialogTitle>
         </DialogHeader>
@@ -121,7 +121,7 @@ export function ConnectKrakenModal({ open, onOpenChange, status, onSaved }: Conn
           </div>
 
           <div className="flex items-start gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#4ECDC4]" />
+            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Keys are encrypted before storage and only ever decrypted server-side to call Kraken on
               your behalf — they are never returned to the browser. Create a key with{" "}
@@ -133,7 +133,7 @@ export function ConnectKrakenModal({ open, onOpenChange, status, onSaved }: Conn
                 href="https://support.kraken.com/hc/en-us/articles/360000919966-How-to-generate-an-API-key-pair"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[#4ECDC4] underline underline-offset-2"
+                className="inline-flex items-center gap-1 text-primary underline underline-offset-2"
               >
                 Kraken API key docs <ExternalLink className="h-3 w-3" />
               </a>

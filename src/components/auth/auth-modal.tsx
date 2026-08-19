@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { OptimalLogo } from "@/components/kraken/optimal-logo";
+import { MinnieCooperLogo } from "@/components/brand/minnie-cooper-logo";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -87,9 +87,9 @@ export function AuthModal({ open, onOpenChange, defaultMode = "sign-in", onAuthe
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader className="items-center">
-          <OptimalLogo />
+          <MinnieCooperLogo variant="compact" />
           <DialogTitle className="pt-2 text-base">
-            {mode === "sign-in" ? "Sign in to Optimal" : "Create your account"}
+            {mode === "sign-in" ? "Sign in to Minnie Cooper" : "Create your account"}
           </DialogTitle>
         </DialogHeader>
 

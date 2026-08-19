@@ -7,7 +7,7 @@ export function KrakenAccountButton() {
 
   return (
     <Button variant="outline" size="sm" onClick={openConnectModal}>
-      <KeyRound className={`h-3.5 w-3.5 ${connected ? "text-[#4ECDC4]" : "text-muted-foreground"}`} />
+      <KeyRound className={`h-3.5 w-3.5 ${connected ? "text-primary" : "text-muted-foreground"}`} />
       <span className="font-mono text-[11px]">
         {connected ? `Kraken ····${status?.apiKeyLast4 ?? "????"}` : "Connect Kraken"}
       </span>
