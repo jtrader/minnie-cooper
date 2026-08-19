@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "name": "Optimal Risk Management",
   "template": "tanstack_start_ts_current",
   "revision": "tanstack_start_ts_current-b056f590ab96"
 }
