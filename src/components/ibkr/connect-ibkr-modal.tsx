@@ -104,11 +104,23 @@ export function ConnectIbkrModal({ open, onOpenChange, settings }: ConnectIbkrMo
                 </a>{" "}
                 once in this browser and accept its self-signed certificate.
               </li>
-              <li>
+            <li>
                 Log in with your IBKR username, password and 2FA <strong>on the gateway&apos;s own page</strong> —
                 never here.
               </li>
             </ol>
+            <p className="mt-2 border-t border-border pt-2 text-[11px] leading-relaxed text-muted-foreground">
+              Optional: avoid the daily gateway login by running{" "}
+              <a
+                href="https://github.com/IbcAlpha/IBC"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 font-medium text-primary underline underline-offset-2"
+              >
+                IBC <ExternalLink className="h-3 w-3" />
+              </a>{" "}
+              locally. It handles auto-login on your own machine — we never see or store those credentials.
+            </p>
           </div>
 
           <div className="flex items-start gap-2 rounded-md border border-border bg-card px-3 py-2">
