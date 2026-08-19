@@ -21,6 +21,7 @@ import { listTools } from "@/lib/kraken/client";
 import { guessTool } from "@/lib/kraken/discovery";
 import { useBridgeSettings, useToolMap, type SectionKey } from "@/lib/kraken/settings";
 import { AuthGate } from "@/components/auth/auth-gate";
+import { KrakenAccountButton } from "@/components/kraken/kraken-account-button";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
@@ -105,6 +106,7 @@ function Dashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+          <KrakenAccountButton />
           <Link
             to="/stop-loss"
             className="inline-flex items-center gap-1.5 rounded-md border border-input px-2.5 py-1.5 text-xs font-medium hover:bg-accent"

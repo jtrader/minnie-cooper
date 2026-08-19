@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      kraken_credentials: {
+        Row: {
+          api_key_ciphertext: string
+          api_key_last4: string
+          created_at: string
+          private_key_ciphertext: string
+          trading_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_ciphertext: string
+          api_key_last4: string
+          created_at?: string
+          private_key_ciphertext: string
+          trading_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_ciphertext?: string
+          api_key_last4?: string
+          created_at?: string
+          private_key_ciphertext?: string
+          trading_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
