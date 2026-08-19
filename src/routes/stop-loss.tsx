@@ -6,20 +6,22 @@ import { useBridgeSettings } from "@/lib/kraken/settings";
 export const Route = createFileRoute("/stop-loss")({
   head: () => ({
     meta: [
-      { title: "Stop-Loss Curves — Kraken Bridge Dashboard" },
+      { title: "Stop-Loss Curves — Optimal Risk Management" },
       {
         name: "description",
         content:
-          "Draw a hand-made price floor over time and let the local kraken-bridge watch the market against it, in dry run or armed mode.",
+          "Draw and monitor hand-made stop-loss price floors over time via your local kraken-bridge.",
       },
-      { property: "og:title", content: "Stop-Loss Curves — Kraken Bridge Dashboard" },
+      { property: "og:title", content: "Stop-Loss Curves — Optimal Risk Management" },
       {
         property: "og:description",
         content: "Hand-drawn stop-loss curves monitored continuously by your local kraken-bridge.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://kraken-command-center.lovable.app/stop-loss" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "https://kraken-command-center.lovable.app/stop-loss" }],
   }),
   component: StopLossPage,
 });
