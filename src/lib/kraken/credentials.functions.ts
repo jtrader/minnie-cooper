@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 
 export type KrakenCredentialStatus = {
   connected: boolean;
@@ -88,7 +89,7 @@ export const krakenPrivateRequest = createServerFn({ method: "POST" })
     }
     return { endpoint: input.endpoint, params: input.params ?? {} };
   })
-  .handler(async ({ data, context }): Promise<unknown> => {
+  .handler(async ({ data, context }): Promise<Json> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("kraken_credentials")
@@ -100,10 +101,11 @@ export const krakenPrivateRequest = createServerFn({ method: "POST" })
 
     const { decryptSecret } = await import("./credentials-crypto.server");
     const { callKrakenPrivate } = await import("./kraken-private.server");
-    return callKrakenPrivate(
+    const result = await callKrakenPrivate(
       data.endpoint,
       decryptSecret(row.api_key_ciphertext),
       decryptSecret(row.private_key_ciphertext),
       data.params,
     );
+    return (result ?? null) as Json;
   });
