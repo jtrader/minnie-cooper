@@ -1,22 +1,3 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-
-function key(): Buffer {
-  const raw = process.env["KRAKEN_CREDENTIALS_KEY"];
-  if (!raw) throw new Error("KRAKEN_CREDENTIALS_KEY is not set");
-  // Derive a fixed 32-byte key from the stored secret string.
-  return createHash("sha256").update(raw, "utf8").digest();
-}
-
-export function encryptSecret(plaintext: string): string {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", key(), iv);
-  const ct = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
-  return Buffer.concat([iv, cipher.getAuthTag(), ct]).toString("base64");
-}
-
-export function decryptSecret(stored: string): string {
-  const buf = Buffer.from(stored, "base64");
-  const decipher = createDecipheriv("aes-256-gcm", key(), buf.subarray(0, 12));
-  decipher.setAuthTag(buf.subarray(12, 28));
-  return Buffer.concat([decipher.update(buf.subarray(28)), decipher.final()]).toString("utf8");
-}
+// Shared AES-256-GCM helper lives in src/lib/secure so every broker integration
+// (Kraken, MT5, …) encrypts credentials with the exact same primitive.
+export { encryptSecret, decryptSecret } from "@/lib/secure/secret-crypto.server";
