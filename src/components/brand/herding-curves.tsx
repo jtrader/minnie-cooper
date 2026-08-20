@@ -124,7 +124,7 @@ export function HerdingCurves() {
         <article className="rounded-3xl border border-border bg-card p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MinnieMark className="h-7 w-auto text-minnie" />
+              <MinnieMark className="h-9 w-auto" />
               <h3 className="font-display text-2xl font-bold text-card-foreground">Minnie</h3>
             </div>
             <span className="rounded-md bg-minnie/10 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground">
@@ -148,7 +148,7 @@ export function HerdingCurves() {
         <article className="rounded-3xl border border-border bg-card p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CooperMark className="h-7 w-auto text-cooper" />
+              <CooperMark className="h-9 w-auto" />
               <h3 className="font-display text-2xl font-bold text-card-foreground">Cooper</h3>
             </div>
             <span className="rounded-md bg-cooper/10 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-cooper">
