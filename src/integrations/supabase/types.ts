@@ -1,5 +1,4 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
-
 export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.15" }
   public: {
@@ -14,7 +13,6 @@ export type Database = {
     CompositeTypes: { [_ in never]: never }
   }
 }
-
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 export type Tables<T extends keyof DefaultSchema["Tables"]> = DefaultSchema["Tables"][T] extends { Row: infer R } ? R : never
