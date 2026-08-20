@@ -1,133 +1,19 @@
 import type { Mt5AccountSummary, Mt5Order, Mt5Position, Mt5Region } from "./types";
-
 const PROVISIONING = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai";
 const clientApi = (region: Mt5Region) => `https://mt-client-api-v1.${region}.agiliumtrade.ai`;
+function token(): string { const raw = process.env["METAAPI_TOKEN"]; if (!raw) throw new Error("METAAPI_TOKEN is not set. Add it in Project Settings → Secrets."); return raw; }
+async function call(url: string, init?: RequestInit): Promise<unknown> { const response = await fetch(url, { ...init, headers: { "auth-token": token(), "content-type": "application/json", ...(init?.headers ?? {}) } }); const text = await response.text(); const json: unknown = text ? JSON.parse(text) : null; if (!response.ok) { const message = json && typeof json === "object" && "message" in json ? String((json as { message: unknown }).message) : `MetaApi request failed (${response.status})`; throw new Error(message); } return json; }
+const num = (value: unknown): number | null => typeof value === "number" && Number.isFinite(value) ? value : null;
+const str = (value: unknown): string | null => typeof value === "string" ? value : null;
 
-function token(): string {
-  const raw = process.env["METAAPI_TOKEN"];
-  if (!raw) throw new Error("METAAPI_TOKEN is not set. Add it in Project Settings → Secrets.");
-  return raw;
+export async function provisionAccount(input: { login: string; password: string; brokerServer: string; region: Mt5Region; name: string }): Promise<string> {
+  const created = await call(`${PROVISIONING}/users/current/accounts`, { method: "POST", body: JSON.stringify({ name: input.name, type: "cloud", platform: "mt5", login: input.login, password: input.password, server: input.brokerServer, region: input.region, magic: 0 }) }) as { id?: string } | null;
+  if (!created?.id) throw new Error("MetaApi did not return an account id."); return created.id;
 }
-
-async function call(url: string, init?: RequestInit): Promise<unknown> {
-  const response = await fetch(url, {
-    ...init,
-    headers: { "auth-token": token(), "content-type": "application/json", ...(init?.headers ?? {}) },
-  });
-  const text = await response.text();
-  const json: unknown = text ? JSON.parse(text) : null;
-  if (!response.ok) {
-    const message =
-      json && typeof json === "object" && "message" in json
-        ? String((json as { message: unknown }).message)
-        : `MetaApi request failed (${response.status})`;
-    throw new Error(message);
-  }
-  return json;
-}
-
-const num = (value: unknown): number | null =>
-  typeof value === "number" && Number.isFinite(value) ? value : null;
-const str = (value: unknown): string | null => (typeof value === "string" ? value : null);
-
-/** Provision (or reuse) a MetaApi cloud account for these MT5 credentials. */
-export async function provisionAccount(input: {
-  login: string;
-  password: string;
-  brokerServer: string;
-  region: Mt5Region;
-  name: string;
-}): Promise<string> {
-  const created = (await call(`${PROVISIONING}/users/current/accounts`, {
-    method: "POST",
-    body: JSON.stringify({
-      name: input.name,
-      type: "cloud",
-      platform: "mt5",
-      login: input.login,
-      password: input.password,
-      server: input.brokerServer,
-      region: input.region,
-      magic: 0,
-    }),
-  })) as { id?: string } | null;
-  if (!created?.id) throw new Error("MetaApi did not return an account id.");
-  return created.id;
-}
-
-export async function getAccountState(
-  accountId: string,
-): Promise<{ state: string | null; connectionStatus: string | null }> {
-  const account = (await call(`${PROVISIONING}/users/current/accounts/${accountId}`)) as
-    | { state?: string; connectionStatus?: string }
-    | null;
-  return { state: account?.state ?? null, connectionStatus: account?.connectionStatus ?? null };
-}
-
-export async function deployAccount(accountId: string): Promise<void> {
-  await call(`${PROVISIONING}/users/current/accounts/${accountId}/deploy`, { method: "POST" });
-}
-
-export async function removeAccount(accountId: string): Promise<void> {
-  await call(`${PROVISIONING}/users/current/accounts/${accountId}`, { method: "DELETE" }).catch(
-    () => undefined,
-  );
-}
-
-export async function fetchAccountSummary(
-  accountId: string,
-  region: Mt5Region,
-): Promise<Mt5AccountSummary> {
-  const info = (await call(
-    `${clientApi(region)}/users/current/accounts/${accountId}/account-information`,
-  )) as Record<string, unknown> | null;
-  return {
-    broker: str(info?.["broker"]),
-    currency: str(info?.["currency"]),
-    server: str(info?.["server"]),
-    balance: num(info?.["balance"]),
-    equity: num(info?.["equity"]),
-    margin: num(info?.["margin"]),
-    freeMargin: num(info?.["freeMargin"]),
-    marginLevel: num(info?.["marginLevel"]),
-    leverage: num(info?.["leverage"]),
-  };
-}
-
-export async function fetchPositions(accountId: string, region: Mt5Region): Promise<Mt5Position[]> {
-  const rows = (await call(`${clientApi(region)}/users/current/accounts/${accountId}/positions`)) as
-    | Record<string, unknown>[]
-    | null;
-  return (rows ?? []).map((row) => ({
-    id: String(row["id"] ?? ""),
-    symbol: str(row["symbol"]) ?? "—",
-    type: (str(row["type"]) ?? "").replace("POSITION_TYPE_", "").toLowerCase() || "—",
-    volume: num(row["volume"]),
-    openPrice: num(row["openPrice"]),
-    currentPrice: num(row["currentPrice"]),
-    profit: num(row["profit"]),
-    swap: num(row["swap"]),
-    time: str(row["time"]),
-  }));
-}
-
-export async function fetchRecentOrders(accountId: string, region: Mt5Region): Promise<Mt5Order[]> {
-  const end = new Date();
-  const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const rows = (await call(
-    `${clientApi(region)}/users/current/accounts/${accountId}/history-orders/time/${start.toISOString()}/${end.toISOString()}`,
-  )) as Record<string, unknown>[] | null;
-  return (rows ?? [])
-    .map((row) => ({
-      id: String(row["id"] ?? ""),
-      symbol: str(row["symbol"]) ?? "—",
-      type: (str(row["type"]) ?? "").replace("ORDER_TYPE_", "").toLowerCase() || "—",
-      volume: num(row["volume"]),
-      price: num(row["openPrice"]) ?? num(row["currentPrice"]),
-      profit: num(row["profit"]),
-      state: (str(row["state"]) ?? "").replace("ORDER_STATE_", "").toLowerCase() || null,
-      time: str(row["doneTime"]) ?? str(row["time"]),
-    }))
-    .sort((a, b) => (b.time ?? "").localeCompare(a.time ?? ""))
-    .slice(0, 50);
-}
+export async function getAccountState(accountId: string): Promise<{ state: string | null; connectionStatus: string | null }> { const account = await call(`${PROVISIONING}/users/current/accounts/${accountId}`) as { state?: string; connectionStatus?: string } | null; return { state: account?.state ?? null, connectionStatus: account?.connectionStatus ?? null }; }
+export async function deployAccount(accountId: string): Promise<void> { await call(`${PROVISIONING}/users/current/accounts/${accountId}/deploy`, { method: "POST" }); }
+export async function waitForConnected(accountId: string, timeoutMs = 30_000): Promise<void> { const deadline = Date.now() + timeoutMs; let last: string | null = null; while (Date.now() < deadline) { const state = await getAccountState(accountId); last = state.connectionStatus; if (["CONNECTED", "connected"].includes(state.connectionStatus ?? "") || ["DEPLOYED", "deployed"].includes(state.state ?? "")) return; await new Promise(resolve => setTimeout(resolve, 1500)); } throw new Error(`MetaApi account did not become connected in time (status: ${last ?? "unknown"}).`); }
+export async function removeAccount(accountId: string): Promise<void> { await call(`${PROVISIONING}/users/current/accounts/${accountId}`, { method: "DELETE" }).catch(() => undefined); }
+export async function fetchAccountSummary(accountId: string, region: Mt5Region): Promise<Mt5AccountSummary> { const info = await call(`${clientApi(region)}/users/current/accounts/${accountId}/account-information`) as Record<string, unknown> | null; return { broker: str(info?.["broker"]), currency: str(info?.["currency"]), server: str(info?.["server"]), balance: num(info?.["balance"]), equity: num(info?.["equity"]), margin: num(info?.["margin"]), freeMargin: num(info?.["freeMargin"]), marginLevel: num(info?.["marginLevel"]), leverage: num(info?.["leverage"]) }; }
+export async function fetchPositions(accountId: string, region: Mt5Region): Promise<Mt5Position[]> { const rows = await call(`${clientApi(region)}/users/current/accounts/${accountId}/positions`) as Record<string, unknown>[] | null; return (rows ?? []).map(row => ({ id: String(row["id"] ?? ""), symbol: str(row["symbol"]) ?? "—", type: (str(row["type"]) ?? "").replace("POSITION_TYPE_", "").toLowerCase() || "—", volume: num(row["volume"]), openPrice: num(row["openPrice"]), currentPrice: num(row["currentPrice"]), profit: num(row["profit"]), swap: num(row["swap"]), time: str(row["time"]) })); }
+export async function fetchRecentOrders(accountId: string, region: Mt5Region): Promise<Mt5Order[]> { const end = new Date(), start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000); const rows = await call(`${clientApi(region)}/users/current/accounts/${accountId}/history-orders/time/${start.toISOString()}/${end.toISOString()}`) as Record<string, unknown>[] | null; return (rows ?? []).map(row => ({ id: String(row["id"] ?? ""), symbol: str(row["symbol"]) ?? "—", type: (str(row["type"]) ?? "").replace("ORDER_TYPE_", "").toLowerCase() || "—", volume: num(row["volume"]), price: num(row["openPrice"]) ?? num(row["currentPrice"]), profit: num(row["profit"]), state: (str(row["state"]) ?? "").replace("ORDER_STATE_", "").toLowerCase() || null, time: str(row["doneTime"]) ?? str(row["time"]) })).sort((a,b) => (b.time ?? "").localeCompare(a.time ?? "")).slice(0, 50); }
