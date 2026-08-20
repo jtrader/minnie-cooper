@@ -113,7 +113,7 @@ function Landing() {
 
         <section className="space-y-6 text-center">
           <h1 className="mx-auto max-w-3xl font-display text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-            The smartest way to <span className="text-primary">guard</span> your capital on Kraken & Interactive Brokers.
+            The smartest way to <span className="text-primary">guard</span> your capital on Kraken, Interactive Brokers & Metatrader 5.
           </h1>
           <p className="mx-auto max-w-xl text-lg leading-relaxed text-muted-foreground">
             Named after two border collies who never take their eyes off the flock. Automated risk
