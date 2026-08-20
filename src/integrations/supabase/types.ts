@@ -68,6 +68,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mt5_credentials: {
+        Row: {
+          broker_server: string
+          connection_status: string
+          created_at: string
+          login: string
+          metaapi_account_id: string | null
+          password_ciphertext: string
+          region: string
+          trading_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          broker_server: string
+          connection_status?: string
+          created_at?: string
+          login: string
+          metaapi_account_id?: string | null
+          password_ciphertext: string
+          region?: string
+          trading_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          broker_server?: string
+          connection_status?: string
+          created_at?: string
+          login?: string
+          metaapi_account_id?: string | null
+          password_ciphertext?: string
+          region?: string
+          trading_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
