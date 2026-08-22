@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as StopLossRouteImport } from './routes/stop-loss'
+import { Route as ApiPublicVeniceTestRouteImport } from './routes/api/public/venice-test'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const StopLossRoute = StopLossRouteImport.update({
   path: '/stop-loss',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVeniceTestRoute = ApiPublicVeniceTestRouteImport.update({
+  id: '/api/public/venice-test',
+  path: '/api/public/venice-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/stop-loss': typeof StopLossRoute
+  '/api/public/venice-test': typeof ApiPublicVeniceTestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/stop-loss': typeof StopLossRoute
+  '/api/public/venice-test': typeof ApiPublicVeniceTestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/stop-loss': typeof StopLossRoute
+  '/api/public/venice-test': typeof ApiPublicVeniceTestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/stop-loss'
+  fullPaths: '/' | '/dashboard' | '/stop-loss' | '/api/public/venice-test'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/stop-loss'
-  id: '__root__' | '/' | '/dashboard' | '/stop-loss'
+  to: '/' | '/dashboard' | '/stop-loss' | '/api/public/venice-test'
+  id: '__root__' | '/' | '/dashboard' | '/stop-loss' | '/api/public/venice-test'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   StopLossRoute: typeof StopLossRoute
+  ApiPublicVeniceTestRoute: typeof ApiPublicVeniceTestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StopLossRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/venice-test': {
+      id: '/api/public/venice-test'
+      path: '/api/public/venice-test'
+      fullPath: '/api/public/venice-test'
+      preLoaderRoute: typeof ApiPublicVeniceTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   StopLossRoute: StopLossRoute,
+  ApiPublicVeniceTestRoute: ApiPublicVeniceTestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
