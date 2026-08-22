@@ -17,6 +17,8 @@ type AuthModalProps = {
   onAuthenticated?: () => void;
 };
 
+const dashboardRedirectUri = () => `${window.location.origin}/dashboard`;
+
 export function AuthModal({ open, onOpenChange, defaultMode = "sign-in", onAuthenticated }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [email, setEmail] = useState("");
@@ -36,7 +38,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = "sign-in", onAuthe
     setError(null);
     setNotice(null);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: dashboardRedirectUri(),
       extraParams: { prompt: mode === "sign-up" ? "consent select_account" : "select_account" },
     });
     if ("error" in result && result.error) {
@@ -59,7 +61,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = "sign-in", onAuthe
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: dashboardRedirectUri() },
       });
       setBusy(false);
       if (signUpError) {
